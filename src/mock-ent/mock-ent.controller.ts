@@ -59,7 +59,7 @@ export class MockEntController {
         return `<li><a href="${escapeHtml(href)}">${escapeHtml(label)}</a></li>`;
       })
       .join('');
-    return `<!doctype html><title>Mock ENT</title><h1>Mock ENT</h1><p>Sign in as:</p><ul>${links}</ul>`;
+    return `<!doctype html><title>Mock ENT</title><style>body{background:#000;color:#fff;font-family:system-ui}a{color:#45a2f8}</style><h1>Mock ENT</h1><p>Sign in as:</p><ul>${links}</ul>`;
   }
 
   @Get('approve')

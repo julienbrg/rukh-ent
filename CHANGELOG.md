@@ -17,5 +17,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Optional MCP Streamable HTTP endpoint on `/mcp` with a `whoami` tool, behind `MCP_ENABLED` and `MCP_ROLES`
 - Mock ENT OAuth provider on `/mock-ent` for development, behind `ENT_MOCK`; `.env.example` runs against it out of the box
 - Vite, React, React Router and Chakra UI app in `web/`, served by Nest in production, with Helmet CSP
-- "Welcome, <profile>!" landing page, white on black; the assistants page moves to `/assistants`
+- "Welcome, <profile>!" landing page; the assistants page moves to `/assistants`
+- Black background, white text and `#45a2f8` links across the app and the mock ENT page
 - `profile` (Teacher, Personnel, Student, Parent or Super-admin) in the session, `/me` and the MCP `whoami` tool
