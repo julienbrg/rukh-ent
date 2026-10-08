@@ -19,4 +19,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Vite, React, React Router and Chakra UI app in `web/`, served by Nest in production, with Helmet CSP
 - "Welcome, <profile>!" landing page; the assistants page moves to `/assistants`
 - Black background, white text and `#45a2f8` links across the app and the mock ENT page
+- Log out button on the Welcome page; buttons use a `#8c1c84` background
 - `profile` (Teacher, Personnel, Student, Parent or Super-admin) in the session, `/me` and the MCP `whoami` tool
