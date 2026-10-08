@@ -21,3 +21,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Black background, white text and `#45a2f8` links across the app and the mock ENT page
 - Log out button on the Welcome page; buttons use a `#8c1c84` background
 - `profile` (Teacher, Personnel, Student, Parent or Super-admin) in the session, `/me` and the MCP `whoami` tool
+- Technical specification in `.claude/spec.md`, referenced from `.claude/CLAUDE.md`
+- `publish` workflow that syncs `.claude/spec.md` to julienberanger.com/ent-module-spec on push to `main`, with a dry-run diff on pull requests
