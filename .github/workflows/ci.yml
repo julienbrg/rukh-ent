@@ -30,3 +30,14 @@ jobs:
         run: pnpm test
       - name: Typecheck and build
         run: pnpm build
+
+  post:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: node scripts/publish-post.mts --dry-run .claude/spec.md
