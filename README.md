@@ -1,6 +1,6 @@
 # Rukh ENT
 
-Rukh course assistants inside the [Edifice](https://edifice.io) ENT. Staff create and publish assistants; students chat with them. Identity comes only from the ENT. See the [ENT module spec](https://julienberanger.com/ent-module-spec).
+Rukh course assistants inside the [Edifice](https://edifice.io) ENT. Teachers create and publish assistants; everyone else uses them. Identity comes only from the ENT. See the [ENT module spec](https://julienberanger.com/ent-module-spec).
 
 - `src/` — NestJS backend: Edifice OAuth 2.0 login, session cookie, roles, optional MCP endpoint
 - `web/` — Vite + React + Chakra UI app, served by Nest from `/` in production
@@ -23,7 +23,7 @@ pnpm start:dev   # API on :3000
 pnpm web:dev     # app on :5173, proxies the API
 ```
 
-Open http://localhost:5173 and log in.
+Open http://localhost:5173 and log in; you land on "Welcome, <profile>!".
 
 ## Production
 
@@ -36,12 +36,12 @@ Set `NODE_ENV=production`, `ENT_MOCK=false`, the ENT's `ENT_BASE_URL`, client id
 | `GET /auth/login` | public | Starts the OAuth flow |
 | `GET /auth/callback` | public | Checks `state`, opens the session |
 | `POST /auth/logout` | public | Clears the session |
-| `GET /me` | session | Role, schools, classes, allowed models |
+| `GET /me` | session | Profile, role, schools, classes, allowed models |
 | `POST /mcp` | `MCP_ROLES` | MCP Streamable HTTP, when `MCP_ENABLED=true` |
 
 Every route needs a session unless marked `@Public()`. Requests other than `GET`/`HEAD`/`OPTIONS` must come from `PUBLIC_ORIGIN`.
 
-Teachers and personnel get the `staff` role, students `student`; parents, guests and super-admins are refused. The session is a signed cookie, `__Host-rukh`, with a 30-minute sliding idle timeout and an 8-hour maximum age.
+Teachers get the `teacher` role and can edit; personnel, students, parents and super-admins get `user` and can only use. Guests and unknown profiles are refused. The session is a signed cookie, `__Host-rukh`, with a 30-minute sliding idle timeout and an 8-hour maximum age.
 
 ## MCP
 
