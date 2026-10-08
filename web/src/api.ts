@@ -1,6 +1,7 @@
 export interface Me {
   userId: string;
-  role: 'staff' | 'student';
+  profile: 'Teacher' | 'Personnel' | 'Student' | 'Parent' | 'Super-admin';
+  role: 'teacher' | 'user';
   schools: string[];
   classes: string[];
   allowedModels: string[];

@@ -2,7 +2,7 @@ import { Alert, Button, Container, Heading, Stack } from '@chakra-ui/react';
 import { useSearchParams } from 'react-router';
 
 const ERRORS: Record<string, string> = {
-  refused: 'Rukh is open to teachers, staff and students only.',
+  refused: 'Your ENT profile is not recognised.',
   state: 'The login expired or was interrupted. Please try again.',
 };
 
