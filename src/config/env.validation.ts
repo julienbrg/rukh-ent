@@ -42,6 +42,9 @@ export class EnvironmentVariables {
   @IsIn(BOOLEAN)
   ENT_LOG_QUERIES: string = 'false';
 
+  @IsIn(BOOLEAN)
+  ENT_MOCK: string = 'false';
+
   @IsUrl({ require_tld: false })
   PUBLIC_ORIGIN: string;
 
@@ -111,6 +114,16 @@ export function validate(
   );
   if (env.SESSION_IDLE_SECONDS > env.SESSION_MAX_SECONDS) {
     problems.push('SESSION_IDLE_SECONDS: must not exceed SESSION_MAX_SECONDS');
+  }
+
+  if (env.ENT_MOCK === 'true' && env.NODE_ENV === 'production') {
+    problems.push('ENT_MOCK: must not be enabled in production');
+  }
+  if (
+    env.NODE_ENV === 'production' &&
+    env.SESSION_SECRET?.startsWith('dev-only-')
+  ) {
+    problems.push('SESSION_SECRET: replace the development secret');
   }
 
   if (problems.length > 0) {

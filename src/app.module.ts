@@ -1,8 +1,33 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConditionalModule, ConfigModule } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { validate } from './config/env.validation';
+import { EntModule } from './ent/ent.module';
+import { McpModule } from './mcp/mcp.module';
+import { MockEntModule } from './mock-ent/mock-ent.module';
+
+const API_ROUTES = ['/auth', '/me', '/mcp', '/mock-ent'].map(
+  (path) => `${path}{/*path}`,
+);
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, validate })],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, validate }),
+    // In development Vite serves the SPA and proxies the API instead
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'web', 'dist'),
+      exclude: API_ROUTES,
+    }),
+    EntModule,
+    ConditionalModule.registerWhen(
+      McpModule,
+      (env) => env.MCP_ENABLED === 'true',
+    ),
+    ConditionalModule.registerWhen(
+      MockEntModule,
+      (env) => env.ENT_MOCK === 'true',
+    ),
+  ],
 })
 export class AppModule {}
