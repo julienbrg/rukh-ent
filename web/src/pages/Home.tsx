@@ -6,11 +6,7 @@ export function Home({ me, onLogout }: { me: Me; onLogout: () => void }) {
     <Stack gap="4">
       <HStack justify="space-between">
         <Heading>Assistants</Heading>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => logout().then(onLogout)}
-        >
+        <Button size="sm" onClick={() => logout().then(onLogout)}>
           Log out
         </Button>
       </HStack>
