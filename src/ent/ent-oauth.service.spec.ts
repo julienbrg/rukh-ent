@@ -47,7 +47,8 @@ describe('EntOAuthService', () => {
     );
     await expect(oauth.userFromCode('c1')).resolves.toEqual({
       userId: 'u-1',
-      role: 'student',
+      profile: 'Student',
+      role: 'user',
       uai: ['0750001A'],
       classes: ['3A'],
     });
@@ -56,9 +57,10 @@ describe('EntOAuthService', () => {
     );
   });
 
-  it('returns a null role for parents', async () => {
-    respond({ access_token: 'at' }, { userId: 'u-2', type: 'Relative' });
+  it('returns a null role for guests', async () => {
+    respond({ access_token: 'at' }, { userId: 'u-2', type: 'Guest' });
     await expect(oauth.userFromCode('c1')).resolves.toMatchObject({
+      profile: null,
       role: null,
     });
   });

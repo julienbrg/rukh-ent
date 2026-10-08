@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { CookieOptions } from 'express';
-import { Role } from './roles';
+import { Profile, Role } from './roles';
 
 export const SESSION_COOKIE = '__Host-rukh';
 
 export interface EntUser {
   userId: string;
+  profile: Profile;
   role: Role;
   uai: string[];
   classes: string[];
@@ -15,6 +16,7 @@ export interface EntUser {
 
 interface SessionClaims {
   sub: string;
+  profile: Profile;
   role: Role;
   uai: string[];
   classes: string[];
@@ -51,6 +53,7 @@ export class SessionService {
     if (exp <= this.now()) return null;
     const claims: SessionClaims = {
       sub: user.userId,
+      profile: user.profile,
       role: user.role,
       uai: user.uai,
       classes: user.classes,
@@ -81,10 +84,11 @@ export class SessionService {
     } catch {
       return null;
     }
-    if (claims.exp <= this.now()) return null;
+    if (!claims.profile || claims.exp <= this.now()) return null;
 
     const user: EntUser = {
       userId: claims.sub,
+      profile: claims.profile,
       role: claims.role,
       uai: claims.uai,
       classes: claims.classes,

@@ -91,7 +91,7 @@ export class EnvironmentVariables {
   MCP_ENABLED: string = 'false';
 
   @IsString()
-  MCP_ROLES: string = 'staff';
+  MCP_ROLES: string = 'teacher';
 }
 
 /**

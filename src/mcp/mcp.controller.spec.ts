@@ -5,21 +5,27 @@ import { EntUser } from '../ent/session.service';
 import { McpController } from './mcp.controller';
 
 const values = {
-  MCP_ROLES: 'staff',
+  MCP_ROLES: 'teacher',
   PUBLIC_ORIGIN: 'https://rukh.example.fr',
 };
 const controller = new McpController({
   get: (key: string) => values[key],
 } as unknown as ConfigService);
 
-const staff: EntUser = { userId: 'u', role: 'staff', uai: [], classes: [] };
+const teacher: EntUser = {
+  userId: 'u',
+  profile: 'Teacher',
+  role: 'teacher',
+  uai: [],
+  classes: [],
+};
 const request = (origin?: string) => ({ headers: { origin } }) as Request;
 
 describe('McpController', () => {
   it('refuses roles outside MCP_ROLES', async () => {
     await expect(
       controller.handle(
-        { ...staff, role: 'student' },
+        { ...teacher, profile: 'Student', role: 'user' },
         request(),
         {} as Response,
       ),
@@ -28,7 +34,11 @@ describe('McpController', () => {
 
   it('refuses a foreign Origin', async () => {
     await expect(
-      controller.handle(staff, request('https://evil.example'), {} as Response),
+      controller.handle(
+        teacher,
+        request('https://evil.example'),
+        {} as Response,
+      ),
     ).rejects.toThrow(ForbiddenException);
   });
 });

@@ -4,11 +4,12 @@ import { EntOAuthService } from './ent-oauth.service';
 import { EntController, STATE_COOKIE } from './ent.controller';
 import { SESSION_COOKIE, SessionService } from './session.service';
 
-function setup(role: 'staff' | null = 'staff') {
+function setup(role: 'teacher' | null = 'teacher') {
   const oauth = {
     authorizeUrl: (state: string) => `https://ent/authorize?state=${state}`,
     userFromCode: jest.fn().mockResolvedValue({
       userId: 'u-1',
+      profile: role && 'Teacher',
       role,
       uai: [],
       classes: [],
@@ -84,10 +85,17 @@ describe('EntController', () => {
   it('returns /me with the allowed models', () => {
     const { controller } = setup();
     expect(
-      controller.me({ userId: 'u', role: 'staff', uai: ['X'], classes: [] }),
+      controller.me({
+        userId: 'u',
+        profile: 'Teacher',
+        role: 'teacher',
+        uai: ['X'],
+        classes: [],
+      }),
     ).toEqual({
       userId: 'u',
-      role: 'staff',
+      profile: 'Teacher',
+      role: 'teacher',
       schools: ['X'],
       classes: [],
       allowedModels: ['a', 'b'],
