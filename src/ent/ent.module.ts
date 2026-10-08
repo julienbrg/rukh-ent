@@ -17,6 +17,6 @@ import { SessionService } from './session.service';
 })
 export class EntModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(OriginMiddleware).forRoutes('*path');
+    consumer.apply(OriginMiddleware).exclude('mcp').forRoutes('*path');
   }
 }
