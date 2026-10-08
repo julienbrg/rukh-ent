@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-const backend = 'http://localhost:3000';
+const backend = 'http://127.0.0.1:3000';
 const proxied = [
   '/ask',
   '/context',

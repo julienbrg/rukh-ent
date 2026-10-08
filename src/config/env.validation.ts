@@ -119,6 +119,12 @@ export function validate(
   if (env.ENT_MOCK === 'true' && env.NODE_ENV === 'production') {
     problems.push('ENT_MOCK: must not be enabled in production');
   }
+  if (
+    env.NODE_ENV === 'production' &&
+    env.SESSION_SECRET?.startsWith('dev-only-')
+  ) {
+    problems.push('SESSION_SECRET: replace the development secret');
+  }
 
   if (problems.length > 0) {
     throw new Error(
