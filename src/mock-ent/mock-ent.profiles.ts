@@ -34,7 +34,7 @@ export const MOCK_PROFILES: Record<
     },
   },
   parent: {
-    label: 'Parent (refused)',
+    label: 'Parent',
     userinfo: {
       userId: 'mock-relative-0001',
       type: 'Relative',
@@ -44,7 +44,7 @@ export const MOCK_PROFILES: Record<
     },
   },
   admin: {
-    label: 'Super-admin (refused)',
+    label: 'Super-admin',
     userinfo: {
       userId: 'mock-admin-0001',
       type: 'Personnel',

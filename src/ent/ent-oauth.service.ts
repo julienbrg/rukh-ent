@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { roleFromProfile } from './roles';
+import { Profile, profileFromUserinfo, Role, roleFromProfile } from './roles';
 import { EntUser } from './session.service';
 
 interface UserInfo {
@@ -42,15 +42,20 @@ export class EntOAuthService {
     return `${this.baseUrl}/auth/oauth2/auth?${params}`;
   }
 
-  /** Exchanges the code and reads the profile. `role` is null if refused. */
-  async userFromCode(
-    code: string,
-  ): Promise<Omit<EntUser, 'role'> & { role: EntUser['role'] | null }> {
+  /** Exchanges the code and reads the profile. `profile` and `role` are null if refused. */
+  async userFromCode(code: string): Promise<
+    Omit<EntUser, 'profile' | 'role'> & {
+      profile: Profile | null;
+      role: Role | null;
+    }
+  > {
     const accessToken = await this.exchange(code);
     const info = await this.userinfo(accessToken);
+    const profile = profileFromUserinfo(info.type, info.functions);
     return {
       userId: info.userId,
-      role: roleFromProfile(info.type, info.functions),
+      profile,
+      role: profile ? roleFromProfile(profile) : null,
       uai: [info.uai ?? []].flat(),
       classes: info.classNames ?? [],
     };

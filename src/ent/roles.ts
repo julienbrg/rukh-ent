@@ -1,23 +1,31 @@
-export type Role = 'staff' | 'student';
+export type Role = 'teacher' | 'user';
 
-const ROLE_BY_PROFILE: Record<string, Role> = {
-  Teacher: 'staff',
-  Personnel: 'staff',
-  Student: 'student',
+export type Profile =
+  'Teacher' | 'Personnel' | 'Student' | 'Parent' | 'Super-admin';
+
+const PROFILE_BY_TYPE: Record<string, Profile> = {
+  Teacher: 'Teacher',
+  Personnel: 'Personnel',
+  Student: 'Student',
+  Relative: 'Parent',
 };
+const PRECEDENCE: Profile[] = ['Teacher', 'Personnel', 'Student', 'Parent'];
 
 /**
- * Maps an Edifice profile type to a Rukh role. Parents, guests, unknown
- * profiles and super-admins get `null` and are refused at login.
+ * Maps an Edifice profile type to a Rukh profile. Super-admin wins over
+ * any type; guests and unknown profiles get `null` and are refused at login.
  */
-export function roleFromProfile(
+export function profileFromUserinfo(
   type: string | string[] | undefined,
   functions: Record<string, unknown> = {},
-): Role | null {
-  if ('SUPER_ADMIN' in functions) return null;
+): Profile | null {
+  if ('SUPER_ADMIN' in functions) return 'Super-admin';
   const types = Array.isArray(type) ? type : type ? [type] : [];
-  const roles = types.map((t) => ROLE_BY_PROFILE[t]).filter(Boolean);
-  if (roles.includes('staff')) return 'staff';
-  if (roles.includes('student')) return 'student';
-  return null;
+  const profiles = types.map((t) => PROFILE_BY_TYPE[t]);
+  return PRECEDENCE.find((p) => profiles.includes(p)) ?? null;
+}
+
+/** Teachers edit; every other profile only uses. */
+export function roleFromProfile(profile: Profile): Role {
+  return profile === 'Teacher' ? 'teacher' : 'user';
 }

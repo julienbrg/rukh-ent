@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router';
 import { fetchMe, Me } from './api';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
+import { Welcome } from './pages/Welcome';
 
 export function App() {
   const [me, setMe] = useState<Me | null | undefined>(undefined);
@@ -16,13 +17,16 @@ export function App() {
   if (!me) return <Login />;
 
   return (
-    <Container maxW="3xl" py="8">
-      <Routes>
-        <Route
-          path="*"
-          element={<Home me={me} onLogout={() => setMe(null)} />}
-        />
-      </Routes>
-    </Container>
+    <Routes>
+      <Route
+        path="/assistants"
+        element={
+          <Container maxW="3xl" py="8">
+            <Home me={me} onLogout={() => setMe(null)} />
+          </Container>
+        }
+      />
+      <Route path="*" element={<Welcome me={me} />} />
+    </Routes>
   );
 }

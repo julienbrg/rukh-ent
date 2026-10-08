@@ -10,7 +10,8 @@ export function createMcpServer(user: EntUser): McpServer {
     'whoami',
     {
       title: 'Who am I',
-      description: 'Returns the ENT role, schools and classes of the caller.',
+      description:
+        'Returns the ENT profile, role, schools and classes of the caller.',
       annotations: { readOnlyHint: true },
     },
     async () => ({
@@ -18,6 +19,7 @@ export function createMcpServer(user: EntUser): McpServer {
         {
           type: 'text',
           text: JSON.stringify({
+            profile: user.profile,
             role: user.role,
             schools: user.uai,
             classes: user.classes,

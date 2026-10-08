@@ -3,7 +3,8 @@ import { EntUser, SessionService } from './session.service';
 
 const user: EntUser = {
   userId: 'u-1',
-  role: 'student',
+  profile: 'Student',
+  role: 'user',
   uai: ['0750001A'],
   classes: ['3A'],
 };
@@ -36,9 +37,15 @@ describe('SessionService', () => {
     const sessions = service();
     const [h, , s] = sessions.issue(user).split('.');
     const forged = Buffer.from(
-      JSON.stringify({ sub: 'u-1', role: 'staff', exp: 9e9, auth: 0 }),
+      JSON.stringify({ sub: 'u-1', role: 'teacher', exp: 9e9, auth: 0 }),
     ).toString('base64url');
     expect(sessions.verify(`${h}.${forged}.${s}`)).toBeNull();
+  });
+
+  it('rejects a session without a profile', () => {
+    const sessions = service();
+    const token = sessions.issue({ ...user, profile: undefined });
+    expect(sessions.verify(token)).toBeNull();
   });
 
   it('expires after the idle timeout', () => {

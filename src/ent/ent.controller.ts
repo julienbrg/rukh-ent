@@ -92,6 +92,7 @@ export class EntController {
   me(@CurrentUser() user: EntUser) {
     return {
       userId: user.userId,
+      profile: user.profile,
       role: user.role,
       schools: user.uai,
       classes: user.classes,

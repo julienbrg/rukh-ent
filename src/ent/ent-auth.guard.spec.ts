@@ -5,7 +5,8 @@ import { EntUser, SESSION_COOKIE, SessionService } from './session.service';
 
 const user: EntUser = {
   userId: 'u-1',
-  role: 'staff',
+  profile: 'Teacher',
+  role: 'teacher',
   uai: ['0750001A'],
   classes: [],
 };
