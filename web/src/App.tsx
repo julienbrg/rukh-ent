@@ -26,7 +26,10 @@ export function App() {
           </Container>
         }
       />
-      <Route path="*" element={<Welcome me={me} />} />
+      <Route
+        path="*"
+        element={<Welcome me={me} onLogout={() => setMe(null)} />}
+      />
     </Routes>
   );
 }

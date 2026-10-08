@@ -16,6 +16,21 @@ const system = createSystem(
       'html, body': { bg: 'black', color: 'white' },
       'a:not(.chakra-button)': { color: '#45a2f8' },
     },
+    theme: {
+      recipes: {
+        button: {
+          variants: {
+            variant: {
+              solid: {
+                bg: '#8c1c84',
+                color: 'white',
+                _hover: { bg: '#701669' },
+              },
+            },
+          },
+        },
+      },
+    },
   }),
 );
 
