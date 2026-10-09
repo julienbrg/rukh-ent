@@ -4,6 +4,7 @@ Rukh course assistants inside the [Edifice](https://edifice.io) ENT. Teachers cr
 
 - `src/` — NestJS backend: Edifice OAuth 2.0 login, session cookie, roles, optional MCP endpoint
 - `web/` — Vite + React + Chakra UI app, served by Nest from `/` in production
+- `docs/RESOURCES.md` — legal constraints (cadre d'usage, GDPR, CNIL, AI Act), how Rukh meets them, and resources
 
 ## Install
 
