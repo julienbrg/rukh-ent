@@ -61,6 +61,7 @@ test/test.md
 test/test.txt
 contracts/node_modules
 docs/private
+docs/notes
 
 # Data: only the examples are tracked; they are copied into data/contexts/ at boot
 data/*
