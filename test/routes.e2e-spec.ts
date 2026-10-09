@@ -65,17 +65,21 @@ describe('Registered routes', () => {
       'GET /auth/callback',
       'GET /auth/login',
       'POST /auth/logout',
+      'ALL /mcp',
+      'POST /mcp',
       'GET /mock-ent/auth/oauth2/approve',
       'GET /mock-ent/auth/oauth2/auth',
       'POST /mock-ent/auth/oauth2/token',
       'GET /mock-ent/auth/oauth2/userinfo',
+      'GET /oauth/consent',
+      'POST /oauth/consent',
     ]);
   });
 
   it('returns 401 without a session on every other route', async () => {
     const guarded = routes(e2e).filter((r) => !r.isPublic);
     expect(guarded.map((r) => r.path)).toEqual(
-      expect.arrayContaining(['/context', '/context/:name', '/me', '/mcp']),
+      expect.arrayContaining(['/context', '/context/:name', '/me']),
     );
 
     const statuses = await Promise.all(

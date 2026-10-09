@@ -35,6 +35,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Assistants module: `GET /context` lists the assistants visible to the caller, `POST /context` creates a draft (teachers only, name generated as `hdf-<uai>-<slug>-<6 chars>`, owner and school from the session), and `GET`, `PATCH` and `DELETE /context/:name`. Visible to the owner, or once published to the same school with a matching or empty class list; hidden assistants return 404. Only the owning teacher edits or deletes; `model` must be one of `ENT_ALLOWED_MODELS`
 - `/assistants` page lists the visible assistants with their model, classes and a draft badge
 - README `Test` section
+- OAuth 2.1 authorization server for MCP clients, on the MCP SDK auth router: discovery metadata, dynamic client registration, `/authorize` with S256 PKCE, and `/token`. Sign-in goes through the ENT login, then a consent screen naming the client. Access tokens are bound to `/mcp`, carry the ENT user id, profile and role, last `MCP_TOKEN_SECONDS` (1 hour by default) and come without refresh tokens
+- `oauth_clients` and `oauth_codes` tables; codes are single-use, stored hashed and expire after 60 seconds
+- `next` parameter on `/auth/login`: a same-origin path to land on after login
+- README section on connecting an MCP client
 
 ### Changed
 
@@ -43,3 +47,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `.claude/spec.md` roles aligned with the code: `teacher` (Teacher, can edit) and `user` (Personnel, Student, Parent, Super-admin, can only use); the session snippet carries `profile`
 - `docs/notes/` is ignored by git, for local research notes
 - API unit and end-to-end tests run on Vitest instead of Jest, with SWC for decorator metadata; `--experimental-vm-modules` is no longer needed
+- `/mcp` accepts only Bearer tokens from the MCP OAuth flow, and returns 401 with `WWW-Authenticate` otherwise; the ENT session cookie no longer works there. `MCP_ROLES` is enforced on the token's role, and `whoami` returns the token's user

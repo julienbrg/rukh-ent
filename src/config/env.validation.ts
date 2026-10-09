@@ -96,6 +96,10 @@ export class EnvironmentVariables {
 
   @IsString()
   MCP_ROLES: string = 'teacher';
+
+  @IsInt()
+  @IsPositive()
+  MCP_TOKEN_SECONDS: number = 3600;
 }
 
 /**

@@ -17,7 +17,13 @@ import { Public } from './public.decorator';
 import { EntUser, SESSION_COOKIE, SessionService } from './session.service';
 
 export const STATE_COOKIE = '__Host-rukh-state';
+export const NEXT_COOKIE = '__Host-rukh-next';
 const STATE_MAX_AGE_MS = 10 * 60 * 1000;
+
+/** Same-origin path to land on after login, or `null`. */
+export function safeNext(next: string | undefined): string | null {
+  return next && /^\/(?![/\\])/.test(next) ? next : null;
+}
 
 function sameState(a: string | undefined, b: string | undefined): boolean {
   if (!a || !b) return false;
@@ -38,18 +44,22 @@ export class EntController {
     this.allowedModels = allowedModels(config);
   }
 
-  /** Always starts a fresh OAuth flow, so a shared computer never reuses a session. */
+  /**
+   * Always starts a fresh OAuth flow, so a shared computer never reuses a
+   * session. `next` is where the callback lands, `/` by default.
+   */
   @Public()
   @Get('auth/login')
-  login(@Res() res: Response) {
+  login(@Query('next') next: string | undefined, @Res() res: Response) {
     const state = randomBytes(32).toString('base64url');
+    const flow = { ...this.sessions.cookieOptions(), maxAge: STATE_MAX_AGE_MS };
     res
       .clearCookie(SESSION_COOKIE, this.sessions.cookieOptions())
-      .cookie(STATE_COOKIE, state, {
-        ...this.sessions.cookieOptions(),
-        maxAge: STATE_MAX_AGE_MS,
-      })
-      .redirect(this.oauth.authorizeUrl(state));
+      .clearCookie(NEXT_COOKIE, this.sessions.cookieOptions())
+      .cookie(STATE_COOKIE, state, flow);
+    const target = safeNext(next);
+    if (target) res.cookie(NEXT_COOKIE, target, flow);
+    res.redirect(this.oauth.authorizeUrl(state));
   }
 
   @Public()
@@ -61,7 +71,10 @@ export class EntController {
     @Res() res: Response,
   ) {
     const expected = req.cookies?.[STATE_COOKIE];
-    res.clearCookie(STATE_COOKIE, this.sessions.cookieOptions());
+    const next = safeNext(req.cookies?.[NEXT_COOKIE]) ?? '/';
+    res
+      .clearCookie(STATE_COOKIE, this.sessions.cookieOptions())
+      .clearCookie(NEXT_COOKIE, this.sessions.cookieOptions());
     if (!code || !sameState(state, expected)) {
       return res.redirect('/?error=state');
     }
@@ -75,7 +88,7 @@ export class EntController {
         this.sessions.issue(user as EntUser),
         this.sessions.cookieOptions(),
       )
-      .redirect('/');
+      .redirect(next);
   }
 
   @Public()

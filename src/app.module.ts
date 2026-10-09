@@ -10,13 +10,18 @@ import { McpModule } from './mcp/mcp.module';
 import { MockEntModule } from './mock-ent/mock-ent.module';
 
 const API_ROUTES = [
+  '/.well-known',
   '/api',
   '/api-json',
   '/auth',
+  '/authorize',
   '/context',
   '/me',
   '/mcp',
   '/mock-ent',
+  '/oauth',
+  '/register',
+  '/token',
 ].map((path) => `${path}{/*path}`);
 
 @Module({

@@ -1,7 +1,12 @@
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { EntOAuthService } from './ent-oauth.service';
-import { EntController, STATE_COOKIE } from './ent.controller';
+import {
+  EntController,
+  NEXT_COOKIE,
+  safeNext,
+  STATE_COOKIE,
+} from './ent.controller';
 import { SESSION_COOKIE, SessionService } from './session.service';
 
 function setup(role: 'teacher' | null = 'teacher') {
@@ -32,14 +37,34 @@ function setup(role: 'teacher' | null = 'teacher') {
   };
 }
 
-const withState = (state?: string) =>
-  ({ cookies: { [STATE_COOKIE]: state } }) as unknown as Request;
+const withState = (state?: string, next?: string) =>
+  ({
+    cookies: { [STATE_COOKIE]: state, [NEXT_COOKIE]: next },
+  }) as unknown as Request;
+
+describe('safeNext', () => {
+  it.each(['/oauth/consent', '/assistants?x=1'])('keeps %s', (path) => {
+    expect(safeNext(path)).toBe(path);
+  });
+
+  it.each([
+    undefined,
+    '',
+    'oauth',
+    '//evil.example',
+    '/\\evil.example',
+    'https://evil.example',
+  ])('drops %s', (path) => {
+    expect(safeNext(path)).toBeNull();
+  });
+});
 
 describe('EntController', () => {
   it('sets a state cookie matching the redirect', () => {
     const { controller, res } = setup();
-    controller.login(res as unknown as Response);
+    controller.login(undefined, res as unknown as Response);
     const state = res.cookie.mock.calls[0][1];
+    expect(res.cookie).toHaveBeenCalledTimes(1);
     expect(res.cookie.mock.calls[0][0]).toBe(STATE_COOKIE);
     expect(res.redirect).toHaveBeenCalledWith(
       `https://ent/authorize?state=${state}`,
@@ -68,6 +93,27 @@ describe('EntController', () => {
     );
     expect(res.cookie).toHaveBeenCalledWith(SESSION_COOKIE, 'jwt', {});
     expect(res.redirect).toHaveBeenCalledWith('/');
+  });
+
+  it('remembers a safe next path for the callback', () => {
+    const { controller, res } = setup();
+    controller.login('/oauth/consent', res as unknown as Response);
+    expect(res.cookie).toHaveBeenCalledWith(
+      NEXT_COOKIE,
+      '/oauth/consent',
+      expect.anything(),
+    );
+  });
+
+  it('lands on the next path after login', async () => {
+    const { controller, res } = setup();
+    await controller.callback(
+      'code',
+      's1',
+      withState('s1', '/oauth/consent'),
+      res as unknown as Response,
+    );
+    expect(res.redirect).toHaveBeenCalledWith('/oauth/consent');
   });
 
   it('refuses profiles without a role', async () => {
