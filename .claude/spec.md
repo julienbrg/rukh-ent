@@ -60,7 +60,7 @@ Everything that still needs a live test is listed under [To verify on a test pla
 
 Unchanged: the provider layer, the two-step [RAG](https://en.wikipedia.org/wiki/Retrieval-augmented_generation) selection, [streaming](https://github.com/w3hc/rukh/blob/main/docs/STREAMING.md), the [context file layout](https://github.com/w3hc/rukh/blob/main/docs/CONTEXT_MANAGEMENT.md) under `data/contexts/`, and the rule that `instruction-file.md` is always sent to the model.
 
-Rukh is licensed under the [LGPL-3.0](https://www.gnu.org/licenses/lgpl-3.0.html), which the fork keeps. Keeping the ENT code in its own modules makes merges from upstream cheaper.
+Rukh is licensed under the [LGPL-3.0](https://www.gnu.org/licenses/lgpl-3.0.html); Rukh ENT is released under the [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html), which the LGPL-3.0 permits. Keeping the ENT code in its own modules makes merges from upstream cheaper.
 
 ## Architecture
 
