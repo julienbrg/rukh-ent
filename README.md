@@ -46,7 +46,7 @@ Set `NODE_ENV=production`, `ENT_MOCK=false`, the ENT's `ENT_BASE_URL`, client id
 
 | Route | Access | |
 | --- | --- | --- |
-| `GET /auth/login` | public | Starts the OAuth flow |
+| `GET /auth/login` | public | Starts the OAuth flow; `?next=` is a same-origin path to land on |
 | `GET /auth/callback` | public | Checks `state`, opens the session |
 | `POST /auth/logout` | public | Clears the session |
 | `GET /me` | session | Profile, role, schools, classes, allowed models |
@@ -55,7 +55,10 @@ Set `NODE_ENV=production`, `ENT_MOCK=false`, the ENT's `ENT_BASE_URL`, client id
 | `GET /context/:name` | session | One assistant; `404` if hidden from the caller |
 | `PATCH /context/:name` | owner | Updates `description`, `model`, `classes`, `published` |
 | `DELETE /context/:name` | owner | Deletes the assistant and its conversations |
-| `POST /mcp` | `MCP_ROLES` | MCP Streamable HTTP, when `MCP_ENABLED=true` |
+| `POST /mcp` | Bearer, `MCP_ROLES` | MCP Streamable HTTP, when `MCP_ENABLED=true` |
+| `GET /.well-known/oauth-protected-resource/mcp`, `GET /.well-known/oauth-authorization-server` | public | MCP OAuth discovery |
+| `POST /register`, `GET /authorize`, `POST /token` | public | MCP OAuth: client registration, authorization with PKCE, token |
+| `GET`, `POST /oauth/consent` | session | Consent screen naming the MCP client |
 | `GET /api`, `GET /api-json` | public | Swagger UI and the OpenAPI document, when `SWAGGER_ENABLED=true` |
 
 Every route needs a session unless marked `@Public()`. Swagger is mounted outside the guard chain, so `SWAGGER_ENABLED` is its only protection; leave it `false` in production. Requests other than `GET`/`HEAD`/`OPTIONS` must come from `PUBLIC_ORIGIN`.
@@ -64,7 +67,15 @@ Teachers get the `teacher` role and can edit; personnel, students, parents and s
 
 ## MCP
 
-With `MCP_ENABLED=true`, `/mcp` serves a `whoami` tool. It currently authenticates with the ENT session cookie; the OAuth authorization server for MCP clients is planned.
+With `MCP_ENABLED=true`, `/mcp` serves a `whoami` tool, and Rukh ENT acts as the OAuth 2.1 authorization server for MCP clients. Sign-in still goes through the ENT.
+
+To connect a client such as claude.ai or Claude Desktop, add a custom connector with the URL `https://<your domain>/mcp`. The client then:
+
+1. discovers the server through `/.well-known/oauth-protected-resource/mcp` and registers itself;
+2. opens `/authorize` in your browser, which runs the ENT login, then a consent screen naming the client;
+3. receives an access token bound to `/mcp`, valid for `MCP_TOKEN_SECONDS` (1 hour by default). No refresh token is issued: when it expires, the client asks you to sign in again.
+
+Only roles listed in `MCP_ROLES` (`teacher` by default) can connect; others are refused at the consent screen and on `/mcp`. The ENT session cookie is not accepted on `/mcp`, and the ENT access token never reaches the client. Locally, against the mock ENT, use `http://localhost:3000/mcp`.
 
 ## Scripts
 

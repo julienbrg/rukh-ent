@@ -120,9 +120,11 @@ Upstream API paths are kept, so the fork stays close to Rukh and Swagger stays a
 | `/ask` | Upstream controller | Session |
 | `/context`, `/context/*` | Upstream controller | Session; writes need the `teacher` role and ownership |
 | `/web-reader/*` | Upstream controller | Role `teacher` |
-| `/mcp`, `/.well-known/*` | `mcp` module, optional | Bearer token |
+| `/mcp` | `mcp` module, optional | Bearer token |
+| `/.well-known/*`, `/register`, `/authorize`, `/token` | `mcp` module, optional | Public |
+| `/oauth/consent` | `mcp` module, optional | Session |
 
-The client router must never use a path that starts with `ask`, `context`, `auth`, `me`, `api`, `web-reader`, `mcp` or `.well-known`.
+The client router must never use a path that starts with `ask`, `context`, `auth`, `me`, `api`, `web-reader`, `mcp`, `oauth`, `authorize`, `token`, `register` or `.well-known`.
 
 Swagger UI is mounted outside the NestJS guard chain, so a guard does not protect it. The setting above removes it entirely; exposing it to teachers only would need its own middleware.
 
@@ -652,7 +654,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: Object.fromEntries(
-      ['/ask', '/context', '/auth', '/me', '/api', '/web-reader', '/mcp'].map((path) => [
+      ['/ask', '/context', '/auth', '/me', '/api', '/web-reader', '/mcp', '/oauth',
+       '/authorize', '/token', '/register', '/.well-known'].map((path) => [
         path,
         'http://localhost:3000',
       ]),
@@ -671,7 +674,8 @@ ServeStaticModule.forRoot({
   rootPath: join(process.cwd(), 'web', 'dist'),
   // Wildcard syntax depends on the Express version in use: test each path.
   exclude: ['/ask{*any}', '/context{*any}', '/auth{*any}', '/me', '/api{*any}',
-            '/web-reader{*any}', '/mcp', '/.well-known{*any}'],
+            '/web-reader{*any}', '/mcp', '/.well-known{*any}', '/oauth{*any}',
+            '/authorize', '/token', '/register'],
 }),
 ```
 
@@ -748,6 +752,8 @@ So Rukh ENT is its own authorization server for MCP, and delegates the user's au
 5. Rukh ENT issues its own short-lived token, bound to `/mcp`, carrying the ENT user id and role.
 
 Identity still comes only from the ENT. The ENT access token is never passed to the MCP client.
+
+The SDK's `mcpAuthRouter` serves the discovery documents, `/register`, `/authorize` and `/token`, and checks PKCE; `requireBearerAuth` guards `/mcp`. The pending authorization request waits in a signed cookie through the ENT login (`/auth/login?next=/oauth/consent`). Codes are single-use, stored hashed and last 60 seconds. Access tokens are HS256, signed with a key derived from `SESSION_SECRET` under their own label, so a session cookie never verifies as one, and they last `MCP_TOKEN_SECONDS`. No refresh token is issued, so nothing needs storing or revoking: the client signs in again when its token expires.
 
 `MCP_ROLES=teacher` by default. Opening MCP to the `user` role means minors' requests reach whichever LLM client they connect, which is a decision for the school.
 
@@ -865,6 +871,7 @@ SWAGGER_ENABLED=false
 # MCP (optional)
 MCP_ENABLED=false
 MCP_ROLES=teacher
+MCP_TOKEN_SECONDS=3600
 ```
 
 Upstream requires both `MISTRAL_API_KEY` and `ANTHROPIC_API_KEY` to boot, because Mistral also runs the RAG selection step. Removed from upstream: the `SIWE_*` variables.
