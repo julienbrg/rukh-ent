@@ -12,6 +12,11 @@ const proxied = [
   '/web-reader',
   '/mcp',
   '/mock-ent',
+  '/oauth',
+  '/authorize',
+  '/token',
+  '/register',
+  '/.well-known',
 ];
 
 export default defineConfig({

@@ -1,8 +1,8 @@
 import { ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import { EntUser } from '../ent/session.service';
-import { McpController } from './mcp.controller';
+import { McpController, McpRequest } from './mcp.controller';
 
 const values = {
   MCP_ROLES: 'teacher',
@@ -19,24 +19,32 @@ const teacher: EntUser = {
   uai: [],
   classes: [],
 };
-const request = (origin?: string) => ({ headers: { origin } }) as Request;
+const request = (user?: EntUser, origin?: string) =>
+  ({
+    headers: { origin },
+    auth: user && { extra: { user } },
+  }) as unknown as McpRequest;
 
 describe('McpController', () => {
   it('refuses roles outside MCP_ROLES', async () => {
     await expect(
       controller.handle(
-        { ...teacher, profile: 'Student', role: 'user' },
-        request(),
+        request({ ...teacher, profile: 'Student', role: 'user' }),
         {} as Response,
       ),
     ).rejects.toThrow(ForbiddenException);
   });
 
+  it('refuses a request without a verified token', async () => {
+    await expect(controller.handle(request(), {} as Response)).rejects.toThrow(
+      ForbiddenException,
+    );
+  });
+
   it('refuses a foreign Origin', async () => {
     await expect(
       controller.handle(
-        teacher,
-        request('https://evil.example'),
+        request(teacher, 'https://evil.example'),
         {} as Response,
       ),
     ).rejects.toThrow(ForbiddenException);

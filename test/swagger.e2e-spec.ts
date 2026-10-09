@@ -3,6 +3,14 @@ import { bootApp, E2eApp } from './setup';
 
 type Operation = { security?: Record<string, string[]>[] };
 
+/** No `security` inherits the session; `[{}]` is anonymous. */
+function accessLevel(security: Operation['security']): string {
+  if (!security) return 'session';
+  if (JSON.stringify(security) === '[{}]') return 'public';
+  if (JSON.stringify(security) === '[{"mcp":[]}]') return 'bearer';
+  return JSON.stringify(security);
+}
+
 describe('Swagger enabled', () => {
   let e2e: E2eApp;
   let paths: Record<string, Record<string, Operation>>;
@@ -33,7 +41,7 @@ describe('Swagger enabled', () => {
     const access = Object.entries(paths).flatMap(([path, methods]) =>
       Object.entries(methods).map(
         ([method, op]) =>
-          `${method.toUpperCase()} ${path} ${op.security ? 'public' : 'session'}`,
+          `${method.toUpperCase()} ${path} ${accessLevel(op.security)}`,
       ),
     );
     expect(access.sort()).toEqual([
@@ -46,11 +54,8 @@ describe('Swagger enabled', () => {
       'PATCH /context/{name} session',
       'POST /auth/logout public',
       'POST /context session',
-      'POST /mcp session',
+      'POST /mcp bearer',
     ]);
-    for (const op of Object.values(paths).flatMap(Object.values)) {
-      if (op.security) expect(op.security).toEqual([{}]);
-    }
   });
 
   it('leaves the mock ENT out', () => {
