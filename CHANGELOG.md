@@ -32,6 +32,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Swagger UI on `/api` and the OpenAPI document on `/api-json` when `SWAGGER_ENABLED=true`, with the `__Host-rukh` session cookie as the default security scheme, `@Public()` routes marked anonymous and the mock ENT left out; e2e tests for both settings
 - SQLite storage on better-sqlite3: `data/rukh-ent.db` (`DB_PATH`, `:memory:` in tests) in WAL mode with foreign keys on, and numbered `.sql` migrations tracked with `PRAGMA user_version`, applied at startup in one transaction so a failed migration stops startup and leaves the database unchanged
 - `assistants` and `conversations` tables; assistant documents stay as Markdown under `data/contexts/<name>/`
+- Assistants module: `GET /context` lists the assistants visible to the caller, `POST /context` creates a draft (teachers only, name generated as `hdf-<uai>-<slug>-<6 chars>`, owner and school from the session), and `GET`, `PATCH` and `DELETE /context/:name`. Visible to the owner, or once published to the same school with a matching or empty class list; hidden assistants return 404. Only the owning teacher edits or deletes; `model` must be one of `ENT_ALLOWED_MODELS`
+- `/assistants` page lists the visible assistants with their model, classes and a draft badge
+- README `Test` section
 
 ### Changed
 
