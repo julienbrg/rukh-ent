@@ -2,7 +2,7 @@
   "name": "rukh-ent",
   "version": "0.1.0",
   "description": "Rukh course assistants for the Edifice ENT",
-  "license": "LGPL-3.0-or-later",
+  "license": "AGPL-3.0-or-later",
   "private": true,
   "scripts": {
     "build": "pnpm --filter rukh-ent-web build && nest build",
