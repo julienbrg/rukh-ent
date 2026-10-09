@@ -25,8 +25,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Technical specification in `.claude/spec.md`, referenced from `.claude/CLAUDE.md`
 - `publish` workflow that syncs `.claude/spec.md` to julienberanger.com/ent-module-spec on push to `main`, with a dry-run diff on pull requests
 - `docs/TEMPLATING.md`: existing Edifice starters, the parts of Rukh ENT any external ENT connector needs, and the shape of a reusable connector template
+- End-to-end auth tests (`pnpm test:e2e`, run in CI) against the mock ENT: login for each profile, refused profiles, `state` and Origin checks, logout, and a test that every route without `@Public()` returns 401
+- `guest` mock ENT profile, refused at login
 
 ### Changed
 
+- `main.ts` setup (Helmet, cookie parser, validation pipe) moved to `configureApp()` in `src/app.setup.ts`, shared with the e2e tests
 - License switched from LGPL-3.0-or-later to [AGPL-3.0-or-later](LICENSE)
 - `.claude/spec.md` roles aligned with the code: `teacher` (Teacher, can edit) and `user` (Personnel, Student, Parent, Super-admin, can only use); the session snippet carries `profile`
