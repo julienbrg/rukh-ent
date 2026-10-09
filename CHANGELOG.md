@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - README `Test` section
 - OAuth 2.1 authorization server for MCP clients, on the MCP SDK auth router: discovery metadata, dynamic client registration, `/authorize` with S256 PKCE, and `/token`. Sign-in goes through the ENT login, then a consent screen naming the client. Access tokens are bound to `/mcp`, carry the ENT user id, profile and role, last `MCP_TOKEN_SECONDS` (1 hour by default) and come without refresh tokens
 - `oauth_clients` and `oauth_codes` tables; codes are single-use, stored hashed and expire after 60 seconds
+- `docs/RESOURCES.md`: GAR requirements for resource providers from the GAR contract (v2026), with Rukh ENT's answer or what is missing for each, and links to the GAR documentation
 - `next` parameter on `/auth/login`: a same-origin path to land on after login
 - README section on connecting an MCP client
 
