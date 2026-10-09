@@ -60,4 +60,4 @@ With `MCP_ENABLED=true`, `/mcp` serves a `whoami` tool. It currently authenticat
 
 ## License
 
-LGPL-3.0-or-later
+Copyright (C) 2026 Julien Béranger. Licensed under [AGPL-3.0-or-later](LICENSE).
