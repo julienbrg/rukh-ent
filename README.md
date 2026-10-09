@@ -62,7 +62,7 @@ With `MCP_ENABLED=true`, `/mcp` serves a `whoami` tool. It currently authenticat
 
 ## Contributing
 
-
+Contributions are welcome. Open or pick an issue first; [`good first issue`](https://github.com/julienbrg/rukh-ent/labels/good%20first%20issue) is a good place to start. Before you open a pull request, run `pnpm check` and the tests. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions and the review flow.
 
 ## Contact
 
