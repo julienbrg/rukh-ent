@@ -28,6 +28,8 @@ jobs:
         run: pnpm check
       - name: Test
         run: pnpm test
+      - name: End-to-end tests
+        run: pnpm test:e2e
       - name: Typecheck and build
         run: pnpm build
 
