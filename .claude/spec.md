@@ -279,6 +279,7 @@ The session is a signed [JWT](https://datatracker.ietf.org/doc/html/rfc7519) in 
 ```ts
 // src/ent/session.ts
 import { SignJWT, jwtVerify } from 'jose';
+import { Profile, Role } from './roles';
 
 const key = new TextEncoder().encode(process.env.SESSION_SECRET);
 const IDLE = Number(process.env.SESSION_IDLE_SECONDS ?? 1800);
@@ -286,7 +287,8 @@ const MAX = Number(process.env.SESSION_MAX_SECONDS ?? 28800);
 
 export interface SessionUser {
   id: string;
-  role: 'staff' | 'student';
+  profile: Profile;
+  role: Role;
   uai: string[];
   classes: string[];
   startedAt: number;
@@ -296,7 +298,7 @@ export async function seal(
   user: Omit<SessionUser, 'startedAt'>,
   startedAt = Math.floor(Date.now() / 1000),
 ): Promise<string> {
-  return new SignJWT({ role: user.role, uai: user.uai, classes: user.classes, sat: startedAt })
+  return new SignJWT({ profile: user.profile, role: user.role, uai: user.uai, classes: user.classes, sat: startedAt })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(user.id)
     .setIssuedAt()
@@ -312,6 +314,7 @@ export async function unseal(token: string): Promise<SessionUser> {
   }
   return {
     id: payload.sub as string,
+    profile: payload.profile as Profile,
     role: payload.role as SessionUser['role'],
     uai: payload.uai as string[],
     classes: payload.classes as string[],
@@ -328,7 +331,7 @@ This snippet was executed with jose 6: a fresh token round-trips, a token past t
 | [Attributes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie) | `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no `Expires` (cleared when the browser closes) |
 | Idle timeout | 30 minutes; the cookie is re-issued on each authenticated request |
 | Maximum age | 8 hours from login |
-| Contents | ENT user id, role, school codes, class names. No name, login or email |
+| Contents | ENT user id, profile, role, school codes, class names. No name, login or email |
 
 ### Login and callback
 
@@ -364,6 +367,7 @@ export class AuthController {
       '__Host-rukh',
       await seal({
         id: info.userId,
+        profile,
         role: roleFromProfile(profile),
         uai: info.uai ?? [],
         classes: info.classNames ?? (info.classId ? [info.classId] : []),
@@ -855,7 +859,7 @@ Upstream requires both `MISTRAL_API_KEY` and `ANTHROPIC_API_KEY` to boot, becaus
 | Uploaded files | Size limit, timeout, isolated conversion process |
 | Secrets | In `/etc/rukh-ent.env`, readable by the service user only |
 
-Personal data held by the server: ENT user id, role, school codes, class names, and conversation text. No name, login or email is stored.
+Personal data held by the server: ENT user id, profile, role, school codes, class names, and conversation text. No name, login or email is stored.
 
 Conversation text of students, most of them minors, is sent to the model provider chosen for the assistant. Hosting location, retention period, deletion at the end of the school year, information given to families and the impact assessment fall under the [GDPR](https://gdpr-info.eu/) and are to be settled with the school's head and the academy's data protection officer, with [CNIL](https://www.cnil.fr/en) guidance. This document is not legal advice.
 
