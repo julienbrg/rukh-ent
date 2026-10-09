@@ -58,6 +58,7 @@ With `MCP_ENABLED=true`, `/mcp` serves a `whoami` tool. It currently authenticat
 | `pnpm check` | Prettier and ESLint |
 | `pnpm test` | Unit tests |
 | `pnpm test:e2e` | End-to-end tests: boots the app against the mock ENT and runs the login flow over HTTP |
+| `pnpm --filter rukh-ent-web test` | Web app tests (Vitest, jsdom): loading, login errors, Welcome and logout |
 
 ## License
 
