@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `docs/TEMPLATING.md`: existing Edifice starters, the parts of Rukh ENT any external ENT connector needs, and the shape of a reusable connector template
 - End-to-end auth tests (`pnpm test:e2e`, run in CI) against the mock ENT: login for each profile, refused profiles, `state` and Origin checks, logout, and a test that every route without `@Public()` returns 401
 - `guest` mock ENT profile, refused at login
+- `docs/INTEGRATION_GUIDELINES.md`: registering the connector with an ENT, env vars, the OAuth callback and `PUBLIC_ORIGIN`; how ENT profiles map to roles, where roles are enforced, and how to change the mapping with what each change exposes. Linked from `README.md` and `docs/TEMPLATING.md`
 - Vitest and Testing Library in `web/` (`pnpm --filter rukh-ent-web test`, run in CI), with tests for the app's auth states: loading spinner, Login on 401, `?error=refused` and `?error=state` messages, Welcome with the profile, and Log out
 - `CONTRIBUTING.md`: setup, checks, issue, branch, commit and pull request conventions, and licensing of contributions; linked from the README
 - Swagger UI on `/api` and the OpenAPI document on `/api-json` when `SWAGGER_ENABLED=true`, with the `__Host-rukh` session cookie as the default security scheme, `@Public()` routes marked anonymous and the mock ENT left out; e2e tests for both settings
