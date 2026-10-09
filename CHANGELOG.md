@@ -24,3 +24,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `profile` (Teacher, Personnel, Student, Parent or Super-admin) in the session, `/me` and the MCP `whoami` tool
 - Technical specification in `.claude/spec.md`, referenced from `.claude/CLAUDE.md`
 - `publish` workflow that syncs `.claude/spec.md` to julienberanger.com/ent-module-spec on push to `main`, with a dry-run diff on pull requests
+- `docs/TEMPLATING.md`: existing Edifice starters, the parts of Rukh ENT any external ENT connector needs, and the shape of a reusable connector template
