@@ -14,8 +14,8 @@ source: https://julienberanger.com/ent-module-spec
 
 Rukh ENT is a fork of [Rukh](https://github.com/w3hc/rukh) that a French secondary school adds to its [ENT](https://fr.wikipedia.org/wiki/Espace_num%C3%A9rique_de_travail) (*espace numérique de travail*) as a connector.
 
-- Staff create and edit course assistants: instructions, documents, links, model.
-- Students chat with the assistants published to their school or class.
+- Teachers create and edit course assistants: instructions, documents, links, model.
+- Other users (staff, students, parents) chat with the assistants published to their school or class.
 - Nobody creates an account. Identity and role come from the ENT, and from nowhere else.
 
 The first target is [ENT Hauts-de-France](https://enthdf.fr/), which runs on the [Edifice](https://edifice.io/) platform.
@@ -116,13 +116,13 @@ Upstream API paths are kept, so the fork stays close to Rukh and Swagger stays a
 | `/auth/login`, `/auth/callback`, `/auth/logout` | `ent` module | Public |
 | `/me` | `ent` module | Session |
 | `/ask` | Upstream controller | Session |
-| `/context`, `/context/*` | Upstream controller | Session; writes need the staff role and ownership |
-| `/web-reader/*` | Upstream controller | Staff |
+| `/context`, `/context/*` | Upstream controller | Session; writes need the `teacher` role and ownership |
+| `/web-reader/*` | Upstream controller | Role `teacher` |
 | `/mcp`, `/.well-known/*` | `mcp` module, optional | Bearer token |
 
 The client router must never use a path that starts with `ask`, `context`, `auth`, `me`, `api`, `web-reader`, `mcp` or `.well-known`.
 
-Swagger UI is mounted outside the NestJS guard chain, so a guard does not protect it. The setting above removes it entirely; exposing it to staff only would need its own middleware.
+Swagger UI is mounted outside the NestJS guard chain, so a guard does not protect it. The setting above removes it entirely; exposing it to teachers only would need its own middleware.
 
 ## Authentication
 
@@ -142,7 +142,7 @@ Each school's ENT administrator creates an OAuth2 connector in the administratio
 | *Scope* | `userinfo` |
 | *Mode d'identification* | `code` |
 | *Code secret* | generated, sent out of band |
-| Allowed profiles | teachers, staff, students |
+| Allowed profiles | teachers, staff, students, parents, super-admins |
 
 ### Endpoints
 
@@ -227,39 +227,50 @@ Rukh ENT requests version 2.0, because a teacher needs all of their classes to c
 ### Roles
 
 ```ts
-// src/ent/role.ts
-export interface EntUserInfo {
-  userId: string;        // stable UUID
-  type: string;
-  uai?: string[];        // school codes
-  classNames?: string[]; // version 2.0
-  classId?: string;      // version 1.0
+// src/ent/roles.ts
+export type Role = 'teacher' | 'user';
+
+export type Profile =
+  'Teacher' | 'Personnel' | 'Student' | 'Parent' | 'Super-admin';
+
+const PROFILE_BY_TYPE: Record<string, Profile> = {
+  Teacher: 'Teacher',
+  Personnel: 'Personnel',
+  Student: 'Student',
+  Relative: 'Parent',
+};
+const PRECEDENCE: Profile[] = ['Teacher', 'Personnel', 'Student', 'Parent'];
+
+/**
+ * Maps an Edifice profile type to a Rukh profile. Super-admin wins over
+ * any type; guests and unknown profiles get `null` and are refused at login.
+ */
+export function profileFromUserinfo(
+  type: string | string[] | undefined,
+  functions: Record<string, unknown> = {},
+): Profile | null {
+  if ('SUPER_ADMIN' in functions) return 'Super-admin';
+  const types = Array.isArray(type) ? type : type ? [type] : [];
+  const profiles = types.map((t) => PROFILE_BY_TYPE[t]);
+  return PRECEDENCE.find((p) => profiles.includes(p)) ?? null;
 }
 
-export type Role = 'staff' | 'student';
-
-const ROLE_BY_TYPE: Record<string, Role> = {
-  ENSEIGNANT: 'staff',
-  Teacher: 'staff',
-  PERSEDUCNAT: 'staff',
-  Personnel: 'staff',
-  ELEVE: 'student',
-  Student: 'student',
-};
-
-export function roleOf(info: EntUserInfo): Role | null {
-  return ROLE_BY_TYPE[info.type] ?? null; // null: access refused
+/** Teachers edit; every other profile only uses. */
+export function roleFromProfile(profile: Profile): Role {
+  return profile === 'Teacher' ? 'teacher' : 'user';
 }
 ```
 
 | ENT profile | Role | Rights |
 | --- | --- | --- |
-| Teacher | `staff` | Create, edit, publish and delete their own assistants; chat |
-| Non-teaching staff (librarians, CPE…) | `staff` | Same as teachers |
-| Student | `student` | Chat with the assistants visible to them |
-| Parent, super-admin | none | Refused with a clear page |
+| Teacher | `teacher` | Create, edit, publish and delete their own assistants; chat |
+| Non-teaching staff (librarians, CPE…) | `user` | Chat with the assistants visible to them |
+| Student | `user` | Same as non-teaching staff |
+| Parent | `user` | Same as non-teaching staff |
+| Super-admin | `user` | Same as non-teaching staff; wins over any other profile type |
+| Guest, unknown | none | Refused with a clear page |
 
-Non-teaching staff usually have no class. In version 1 they publish to the whole school.
+A user holding several profile types gets the first of Teacher, Personnel, Student, Parent. Non-teaching staff usually have no class, so they see the assistants published to the whole school.
 
 ### Session
 
@@ -268,6 +279,7 @@ The session is a signed [JWT](https://datatracker.ietf.org/doc/html/rfc7519) in 
 ```ts
 // src/ent/session.ts
 import { SignJWT, jwtVerify } from 'jose';
+import { Profile, Role } from './roles';
 
 const key = new TextEncoder().encode(process.env.SESSION_SECRET);
 const IDLE = Number(process.env.SESSION_IDLE_SECONDS ?? 1800);
@@ -275,7 +287,8 @@ const MAX = Number(process.env.SESSION_MAX_SECONDS ?? 28800);
 
 export interface SessionUser {
   id: string;
-  role: 'staff' | 'student';
+  profile: Profile;
+  role: Role;
   uai: string[];
   classes: string[];
   startedAt: number;
@@ -285,7 +298,7 @@ export async function seal(
   user: Omit<SessionUser, 'startedAt'>,
   startedAt = Math.floor(Date.now() / 1000),
 ): Promise<string> {
-  return new SignJWT({ role: user.role, uai: user.uai, classes: user.classes, sat: startedAt })
+  return new SignJWT({ profile: user.profile, role: user.role, uai: user.uai, classes: user.classes, sat: startedAt })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(user.id)
     .setIssuedAt()
@@ -301,6 +314,7 @@ export async function unseal(token: string): Promise<SessionUser> {
   }
   return {
     id: payload.sub as string,
+    profile: payload.profile as Profile,
     role: payload.role as SessionUser['role'],
     uai: payload.uai as string[],
     classes: payload.classes as string[],
@@ -317,7 +331,7 @@ This snippet was executed with jose 6: a fresh token round-trips, a token past t
 | [Attributes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie) | `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no `Expires` (cleared when the browser closes) |
 | Idle timeout | 30 minutes; the cookie is re-issued on each authenticated request |
 | Maximum age | 8 hours from login |
-| Contents | ENT user id, role, school codes, class names. No name, login or email |
+| Contents | ENT user id, profile, role, school codes, class names. No name, login or email |
 
 ### Login and callback
 
@@ -346,14 +360,15 @@ export class AuthController {
     res.clearCookie('__Host-rukh-state', STATE_COOKIE);
 
     const info = await fetchUserInfo(await exchangeCode(code));
-    const role = roleOf(info);
-    if (!role) throw new ForbiddenException('profile not allowed');
+    const profile = profileFromUserinfo(info.type, info.functions);
+    if (!profile) throw new ForbiddenException('profile not allowed');
 
     res.cookie(
       '__Host-rukh',
       await seal({
         id: info.userId,
-        role,
+        profile,
+        role: roleFromProfile(profile),
         uai: info.uai ?? [],
         classes: info.classNames ?? (info.classId ? [info.classId] : []),
       }),
@@ -460,8 +475,8 @@ Context names match `^[a-z0-9-]+$` upstream. The fork generates them: `hdf-<uai>
 | Action | Rule |
 | --- | --- |
 | Read or chat | Owner; or `published`, and `uai` is one of the user's schools, and `classes` is empty or shares a class with the user |
-| Create | Role `staff`. `uai` must be one of the user's schools |
-| Edit, upload, delete | Role `staff` and `ownerId` equals the session user id |
+| Create | Role `teacher`. `uai` must be one of the user's schools |
+| Edit, upload, delete | Role `teacher` and `ownerId` equals the session user id |
 
 A context the user cannot see returns `404`, not `403`, so names do not leak.
 
@@ -480,7 +495,7 @@ A context the user cannot see returns `404`, not `403`, so names do not leak.
 
 ### Model choice
 
-Staff choose the model per assistant, among the values of `ENT_ALLOWED_MODELS`. Rukh supports `mistral`, `anthropic`, `anthropic-web-search`, `openai` and `deepseek` ([details](https://github.com/w3hc/rukh/blob/main/docs/MODELS.md)), backed by [Mistral](https://mistral.ai/), [Anthropic](https://www.anthropic.com/), [OpenAI](https://openai.com/) and [DeepSeek](https://www.deepseek.com/). A provider without an API key on the instance is skipped.
+Teachers choose the model per assistant, among the values of `ENT_ALLOWED_MODELS`. Rukh supports `mistral`, `anthropic`, `anthropic-web-search`, `openai` and `deepseek` ([details](https://github.com/w3hc/rukh/blob/main/docs/MODELS.md)), backed by [Mistral](https://mistral.ai/), [Anthropic](https://www.anthropic.com/), [OpenAI](https://openai.com/) and [DeepSeek](https://www.deepseek.com/). A provider without an API key on the instance is skipped.
 
 The interface shows the provider next to each model, because student messages are sent to that provider.
 
@@ -521,7 +536,7 @@ Upstream appends every question to `queries` in `index.json`, with the message t
 
 ## Document import
 
-Rukh stores Markdown only. The fork converts what staff upload.
+Rukh stores Markdown only. The fork converts what teachers upload.
 
 | Format | Conversion |
 | --- | --- |
@@ -594,9 +609,9 @@ Edifice's own [frontend framework](https://github.com/edificeio/edifice-frontend
 
 | Path | Screen | Role |
 | --- | --- | --- |
-| `/` | Assistants visible to the user; for staff, their own assistants and drafts first | All |
+| `/` | Assistants visible to the user; for teachers, their own assistants and drafts first | All |
 | `/assistants/:name` | Chat | All |
-| `/new` | Create an assistant: title, model, classes | Staff |
+| `/new` | Create an assistant: title, model, classes | Teacher |
 | `/assistants/:name/edit` | Instructions, documents with import and review, links, visibility, publish, delete | Owner |
 
 ```tsx
@@ -607,14 +622,14 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/assistants/:name', element: <Chat /> },
-      { path: '/new', element: <StaffOnly><NewAssistant /></StaffOnly> },
-      { path: '/assistants/:name/edit', element: <StaffOnly><EditAssistant /></StaffOnly> },
+      { path: '/new', element: <TeacherOnly><NewAssistant /></TeacherOnly> },
+      { path: '/assistants/:name/edit', element: <TeacherOnly><EditAssistant /></TeacherOnly> },
     ],
   },
 ]);
 ```
 
-`StaffOnly` is a convenience for the interface. The server enforces every rule again.
+`TeacherOnly` is a convenience for the interface. The server enforces every rule again.
 
 ### Development proxy
 
@@ -698,7 +713,7 @@ With `MCP_ENABLED=true`, the same process also answers the [Model Context Protoc
 | --- | --- | --- |
 | `list_assistants` | All | `GET /context` |
 | `ask_assistant` | All | `POST /ask` |
-| `create_assistant` | Staff | `POST /context` |
+| `create_assistant` | Teacher | `POST /context` |
 | `update_assistant` | Owner | `PATCH /context/:name` |
 | `put_document` | Owner | `POST /context/upload` |
 | `add_link` | Owner | `POST /context/:name/link` |
@@ -721,7 +736,7 @@ So Rukh ENT is its own authorization server for MCP, and delegates the user's au
 
 Identity still comes only from the ENT. The ENT access token is never passed to the MCP client.
 
-`MCP_ROLES=staff` by default. Opening MCP to students means minors' requests reach whichever LLM client they connect, which is a decision for the school.
+`MCP_ROLES=teacher` by default. Opening MCP to the `user` role means minors' requests reach whichever LLM client they connect, which is a decision for the school.
 
 ## Deployment on an OVHcloud VPS
 
@@ -825,7 +840,7 @@ SWAGGER_ENABLED=false
 
 # MCP (optional)
 MCP_ENABLED=false
-MCP_ROLES=staff
+MCP_ROLES=teacher
 ```
 
 Upstream requires both `MISTRAL_API_KEY` and `ANTHROPIC_API_KEY` to boot, because Mistral also runs the RAG selection step. Removed from upstream: the `SIWE_*` variables.
@@ -844,13 +859,13 @@ Upstream requires both `MISTRAL_API_KEY` and `ANTHROPIC_API_KEY` to boot, becaus
 | Uploaded files | Size limit, timeout, isolated conversion process |
 | Secrets | In `/etc/rukh-ent.env`, readable by the service user only |
 
-Personal data held by the server: ENT user id, role, school codes, class names, and conversation text. No name, login or email is stored.
+Personal data held by the server: ENT user id, profile, role, school codes, class names, and conversation text. No name, login or email is stored.
 
 Conversation text of students, most of them minors, is sent to the model provider chosen for the assistant. Hosting location, retention period, deletion at the end of the school year, information given to families and the impact assessment fall under the [GDPR](https://gdpr-info.eu/) and are to be settled with the school's head and the academy's data protection officer, with [CNIL](https://www.cnil.fr/en) guidance. This document is not legal advice.
 
 ## To verify on a test platform
 
-Ask the school's ENT administrator or [Edifice support](https://edifice.io/contact/) whether a test platform exists. Otherwise, test on enthdf.fr with one staff account and one student test account.
+Ask the school's ENT administrator or [Edifice support](https://edifice.io/contact/) whether a test platform exists. Otherwise, test on enthdf.fr with one teacher account and one student test account.
 
 1. **Connector URL.** What the ENT opens when the user clicks the connector, and whether it opens in a new tab or an iframe. In an iframe, a `SameSite=Lax` cookie is not sent.
 2. **`redirect_uri`.** Whether the host rule read in the source applies on enthdf.fr.
@@ -862,15 +877,15 @@ Ask the school's ENT administrator or [Edifice support](https://edifice.io/conta
 ## Open decisions
 
 - **Logout.** Keep version 1, or add back-channel logout. Depends on item 6.
-- **Students and MCP.** Staff only, or students too.
-- **Swagger in production.** Off, or behind a staff check.
+- **Users and MCP.** Teachers only, or the `user` role too.
+- **Swagger in production.** Off, or behind a teacher check.
 
 ## Build order
 
 1. Fork, remove SIWE, add the `ent` module: OAuth flow, session, global guard. Verify items 1 to 5.
 2. Ownership and visibility on contexts, `PATCH /context/:name`, server-owned conversations, per-user limits.
 3. Vite app: list, chat with streaming.
-4. Staff screens: create, instructions, import and review, publish.
+4. Teacher screens: create, instructions, import and review, publish.
 5. VPS: Caddy, systemd, backups, load test.
 6. Pilot with one class.
 7. Optional: MCP endpoint.
