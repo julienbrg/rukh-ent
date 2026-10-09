@@ -11,6 +11,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ApiExcludeController } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { randomBytes } from 'node:crypto';
 import { Public } from '../ent/public.decorator';
@@ -28,6 +29,7 @@ function escapeHtml(value: string): string {
  * single-use and kept in memory.
  */
 @Public()
+@ApiExcludeController()
 @Controller('mock-ent/auth/oauth2')
 export class MockEntController {
   private readonly clientId: string;

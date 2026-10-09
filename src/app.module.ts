@@ -7,9 +7,14 @@ import { EntModule } from './ent/ent.module';
 import { McpModule } from './mcp/mcp.module';
 import { MockEntModule } from './mock-ent/mock-ent.module';
 
-const API_ROUTES = ['/auth', '/me', '/mcp', '/mock-ent'].map(
-  (path) => `${path}{/*path}`,
-);
+const API_ROUTES = [
+  '/api',
+  '/api-json',
+  '/auth',
+  '/me',
+  '/mcp',
+  '/mock-ent',
+].map((path) => `${path}{/*path}`);
 
 @Module({
   imports: [
