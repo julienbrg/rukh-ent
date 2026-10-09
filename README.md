@@ -5,6 +5,7 @@ Rukh course assistants inside the [Edifice](https://edifice.io) ENT. Teachers cr
 - `src/` — NestJS backend: Edifice OAuth 2.0 login, session cookie, roles, SQLite storage, optional MCP endpoint
 - `web/` — Vite + React + Chakra UI app, served by Nest from `/` in production
 - `docs/RESOURCES.md` — legal constraints (cadre d'usage, GDPR, CNIL, AI Act), how Rukh meets them, and resources
+- `docs/INTEGRATION_GUIDELINES.md` — registering the connector with an ENT, its env vars, and how ENT profiles map to roles and how to change that
 - `docs/TEMPLATING.md` — existing Edifice starters, the generic parts of an ENT connector, and the shape of a reusable template
 
 ## Install
@@ -63,7 +64,7 @@ Set `NODE_ENV=production`, `ENT_MOCK=false`, the ENT's `ENT_BASE_URL`, client id
 
 Every route needs a session unless marked `@Public()`. Swagger is mounted outside the guard chain, so `SWAGGER_ENABLED` is its only protection; leave it `false` in production. Requests other than `GET`/`HEAD`/`OPTIONS` must come from `PUBLIC_ORIGIN`.
 
-Teachers get the `teacher` role and can edit; personnel, students, parents and super-admins get `user` and can only use. Guests and unknown profiles are refused. An assistant is visible to its owner, or once published to users of its school whose classes match its `classes`, or to the whole school when `classes` is empty. `model` must be one of `ENT_ALLOWED_MODELS`. The session is a signed cookie, `__Host-rukh`, with a 30-minute sliding idle timeout and an 8-hour maximum age.
+Teachers get the `teacher` role and can edit; personnel, students, parents and super-admins get `user` and can only use. Guests and unknown profiles are refused. To change this mapping, see [`docs/INTEGRATION_GUIDELINES.md`](docs/INTEGRATION_GUIDELINES.md). An assistant is visible to its owner, or once published to users of its school whose classes match its `classes`, or to the whole school when `classes` is empty. `model` must be one of `ENT_ALLOWED_MODELS`. The session is a signed cookie, `__Host-rukh`, with a 30-minute sliding idle timeout and an 8-hour maximum age.
 
 ## MCP
 

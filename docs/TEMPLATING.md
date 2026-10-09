@@ -45,7 +45,7 @@ Any external connector has to build these. In Rukh ENT they live in their own mo
 
 ## Rukh-specific parts
 
-- The `teacher` and `user` roles in `roleFromProfile`: another application may need different rights per profile.
+- The `teacher` and `user` roles in `roleFromProfile`: another application may need different rights per profile. [INTEGRATION_GUIDELINES.md](INTEGRATION_GUIDELINES.md#changing-the-mapping) shows how to change them.
 - The features from the [spec](https://julienberanger.com/ent-module-spec): assistants, `/ask`, contexts, visibility by school and class, the model provider layer.
 - The licence: Rukh ENT is [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html).
 
