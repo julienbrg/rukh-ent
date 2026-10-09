@@ -57,6 +57,7 @@ With `MCP_ENABLED=true`, `/mcp` serves a `whoami` tool. It currently authenticat
 | `pnpm start:prod` | Runs the built API and app on `127.0.0.1:$PORT` |
 | `pnpm check` | Prettier and ESLint |
 | `pnpm test` | Unit tests |
+| `pnpm test:e2e` | End-to-end tests: boots the app against the mock ENT and runs the login flow over HTTP |
 
 ## License
 
