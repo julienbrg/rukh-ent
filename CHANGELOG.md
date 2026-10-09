@@ -29,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `guest` mock ENT profile, refused at login
 - Vitest and Testing Library in `web/` (`pnpm --filter rukh-ent-web test`, run in CI), with tests for the app's auth states: loading spinner, Login on 401, `?error=refused` and `?error=state` messages, Welcome with the profile, and Log out
 - `CONTRIBUTING.md`: setup, checks, issue, branch, commit and pull request conventions, and licensing of contributions; linked from the README
+- Swagger UI on `/api` and the OpenAPI document on `/api-json` when `SWAGGER_ENABLED=true`, with the `__Host-rukh` session cookie as the default security scheme, `@Public()` routes marked anonymous and the mock ENT left out; e2e tests for both settings
 
 ### Changed
 
