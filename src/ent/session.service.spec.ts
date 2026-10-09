@@ -21,7 +21,7 @@ function service(secret = 'x'.repeat(32)) {
 }
 
 describe('SessionService', () => {
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => vi.useRealTimers());
 
   it('round-trips a user', () => {
     const sessions = service();
@@ -49,23 +49,23 @@ describe('SessionService', () => {
   });
 
   it('expires after the idle timeout', () => {
-    jest.useFakeTimers({ now: 0 });
+    vi.useFakeTimers({ now: 0 });
     const sessions = service();
     const token = sessions.issue(user);
-    jest.setSystemTime(1801 * 1000);
+    vi.setSystemTime(1801 * 1000);
     expect(sessions.verify(token)).toBeNull();
   });
 
   it('slides the idle timeout but stops at the maximum age', () => {
-    jest.useFakeTimers({ now: 0 });
+    vi.useFakeTimers({ now: 0 });
     const sessions = service();
     let token = sessions.issue(user);
     for (let t = 1500; t < 28800; t += 1500) {
-      jest.setSystemTime(t * 1000);
+      vi.setSystemTime(t * 1000);
       token = sessions.verify(token)?.token;
       expect(token).toBeDefined();
     }
-    jest.setSystemTime(28800 * 1000);
+    vi.setSystemTime(28800 * 1000);
     expect(sessions.verify(token)).toBeNull();
   });
 });

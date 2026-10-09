@@ -14,7 +14,7 @@ const oauth = new EntOAuthService({
 } as unknown as ConfigService);
 
 function respond(...bodies: unknown[]) {
-  const fetchMock = jest.fn();
+  const fetchMock = vi.fn();
   for (const body of bodies) {
     fetchMock.mockResolvedValueOnce({
       ok: body !== null,

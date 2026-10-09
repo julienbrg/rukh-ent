@@ -17,7 +17,7 @@ export default [
       },
       globals: {
         node: true,
-        jest: true,
+        vitest: true,
       },
     },
     plugins: {
