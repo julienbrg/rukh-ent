@@ -30,6 +30,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Vitest and Testing Library in `web/` (`pnpm --filter rukh-ent-web test`, run in CI), with tests for the app's auth states: loading spinner, Login on 401, `?error=refused` and `?error=state` messages, Welcome with the profile, and Log out
 - `CONTRIBUTING.md`: setup, checks, issue, branch, commit and pull request conventions, and licensing of contributions; linked from the README
 - Swagger UI on `/api` and the OpenAPI document on `/api-json` when `SWAGGER_ENABLED=true`, with the `__Host-rukh` session cookie as the default security scheme, `@Public()` routes marked anonymous and the mock ENT left out; e2e tests for both settings
+- SQLite storage on better-sqlite3: `data/rukh-ent.db` (`DB_PATH`, `:memory:` in tests) in WAL mode with foreign keys on, and numbered `.sql` migrations tracked with `PRAGMA user_version`, applied at startup in one transaction so a failed migration stops startup and leaves the database unchanged
+- `assistants` and `conversations` tables; assistant documents stay as Markdown under `data/contexts/<name>/`
 
 ### Changed
 
