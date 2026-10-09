@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `docs/TEMPLATING.md`: existing Edifice starters, the parts of Rukh ENT any external ENT connector needs, and the shape of a reusable connector template
 - End-to-end auth tests (`pnpm test:e2e`, run in CI) against the mock ENT: login for each profile, refused profiles, `state` and Origin checks, logout, and a test that every route without `@Public()` returns 401
 - `guest` mock ENT profile, refused at login
+- Vitest and Testing Library in `web/` (`pnpm --filter rukh-ent-web test`, run in CI), with tests for the app's auth states: loading spinner, Login on 401, `?error=refused` and `?error=state` messages, Welcome with the profile, and Log out
 
 ### Changed
 
