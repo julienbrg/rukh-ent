@@ -6,8 +6,8 @@
   "private": true,
   "scripts": {
     "build": "pnpm --filter rukh-ent-web build && nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"web/src/**/*.{ts,tsx}\" \"web/vite.config.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"web/src/**/*.{ts,tsx}\" \"web/vite.config.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"web/src/**/*.{ts,tsx}\" \"web/vite.config.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\" \"web/src/**/*.{ts,tsx}\" \"web/vite.config.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
