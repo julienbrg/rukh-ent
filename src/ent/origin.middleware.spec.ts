@@ -8,7 +8,7 @@ const middleware = new OriginMiddleware({
 } as unknown as ConfigService);
 
 function run(method: string, origin?: string) {
-  const next = jest.fn();
+  const next = vi.fn();
   const req = { method, headers: { origin } } as Request;
   middleware.use(req, {} as Response, next);
   return next;

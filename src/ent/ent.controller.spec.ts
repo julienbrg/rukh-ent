@@ -7,7 +7,7 @@ import { SESSION_COOKIE, SessionService } from './session.service';
 function setup(role: 'teacher' | null = 'teacher') {
   const oauth = {
     authorizeUrl: (state: string) => `https://ent/authorize?state=${state}`,
-    userFromCode: jest.fn().mockResolvedValue({
+    userFromCode: vi.fn().mockResolvedValue({
       userId: 'u-1',
       profile: role && 'Teacher',
       role,
@@ -21,9 +21,9 @@ function setup(role: 'teacher' | null = 'teacher') {
   } as unknown as SessionService;
   const config = { get: () => 'a, b' } as unknown as ConfigService;
   const res = {
-    cookie: jest.fn().mockReturnThis(),
-    clearCookie: jest.fn().mockReturnThis(),
-    redirect: jest.fn(),
+    cookie: vi.fn().mockReturnThis(),
+    clearCookie: vi.fn().mockReturnThis(),
+    redirect: vi.fn(),
   };
   return {
     controller: new EntController(oauth, sessions, config),

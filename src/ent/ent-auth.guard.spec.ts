@@ -20,7 +20,7 @@ function setup(isPublic: boolean, verified: boolean) {
     cookieOptions: () => ({}),
   } as unknown as SessionService;
   const req: Record<string, unknown> = { cookies: { [SESSION_COOKIE]: 'old' } };
-  const res = { cookie: jest.fn() };
+  const res = { cookie: vi.fn() };
   const context = {
     getHandler: () => null,
     getClass: () => null,

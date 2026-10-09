@@ -15,7 +15,7 @@ function setup() {
   const controller = new MockEntController({
     get: (key: string) => values[key],
   } as unknown as ConfigService);
-  const res = { redirect: jest.fn() };
+  const res = { redirect: vi.fn() };
   controller.approve(
     'student',
     'rukh',
