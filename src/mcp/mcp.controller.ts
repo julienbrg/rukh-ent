@@ -14,6 +14,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import type { Request, Response } from 'express';
 import { CurrentUser } from '../ent/current-user.decorator';
 import { EntUser } from '../ent/session.service';
+import { mcpRoles } from './mcp-roles';
 import { createMcpServer } from './mcp.server';
 
 /**
@@ -26,12 +27,7 @@ export class McpController {
   private readonly origin: string;
 
   constructor(config: ConfigService) {
-    this.roles = new Set(
-      config
-        .get<string>('MCP_ROLES')
-        .split(',')
-        .map((r) => r.trim()),
-    );
+    this.roles = mcpRoles(config);
     this.origin = new URL(config.get<string>('PUBLIC_ORIGIN')).origin;
   }
 
