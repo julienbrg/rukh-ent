@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import type { Server } from 'node:http';
 import { AddressInfo, createServer } from 'node:net';
 import request, { Response } from 'supertest';
+import { vi } from 'vitest';
 import { configureApp } from '../src/app.setup';
 
 export interface E2eApp {
@@ -21,10 +22,13 @@ async function freePort(): Promise<number> {
 }
 
 /**
- * Boots the full `AppModule` against the mock ENT. It listens on a real
- * port because the OAuth client reaches `/mock-ent` over `fetch`.
+ * Boots the full `AppModule` against the mock ENT, with `env` on top of
+ * the defaults. It listens on a real port because the OAuth client reaches
+ * `/mock-ent` over `fetch`.
  */
-export async function bootApp(): Promise<E2eApp> {
+export async function bootApp(
+  env: Record<string, string> = {},
+): Promise<E2eApp> {
   const port = await freePort();
   const origin = `http://127.0.0.1:${port}`;
   Object.assign(process.env, {
@@ -41,9 +45,13 @@ export async function bootApp(): Promise<E2eApp> {
     MCP_ENABLED: 'true',
     MCP_ROLES: 'teacher',
     PORT: String(port),
+    SWAGGER_ENABLED: 'false',
+    ...env,
   });
 
-  // Imported late: `ConditionalModule` reads the environment set above.
+  // Imported late and fresh: `ConfigModule.forRoot` and `ConditionalModule`
+  // read the environment set above when the module is evaluated.
+  vi.resetModules();
   const { AppModule } = await import('../src/app.module');
   const moduleRef = await Test.createTestingModule({
     imports: [AppModule],

@@ -9,6 +9,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ApiExcludeEndpoint, ApiOperation } from '@nestjs/swagger';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { Request, Response } from 'express';
 import { CurrentUser } from '../ent/current-user.decorator';
@@ -35,6 +36,10 @@ export class McpController {
   }
 
   @Post()
+  @ApiOperation({
+    summary: 'MCP Streamable HTTP endpoint',
+    description: 'Requires a role listed in `MCP_ROLES`.',
+  })
   async handle(
     @CurrentUser() user: EntUser,
     @Req() req: Request,
@@ -63,6 +68,7 @@ export class McpController {
 
   /** No server-initiated stream or session to delete in stateless mode. */
   @All()
+  @ApiExcludeEndpoint()
   @HttpCode(405)
   other() {
     throw new MethodNotAllowedException();

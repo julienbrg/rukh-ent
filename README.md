@@ -40,8 +40,9 @@ Set `NODE_ENV=production`, `ENT_MOCK=false`, the ENT's `ENT_BASE_URL`, client id
 | `POST /auth/logout` | public | Clears the session |
 | `GET /me` | session | Profile, role, schools, classes, allowed models |
 | `POST /mcp` | `MCP_ROLES` | MCP Streamable HTTP, when `MCP_ENABLED=true` |
+| `GET /api`, `GET /api-json` | public | Swagger UI and the OpenAPI document, when `SWAGGER_ENABLED=true` |
 
-Every route needs a session unless marked `@Public()`. Requests other than `GET`/`HEAD`/`OPTIONS` must come from `PUBLIC_ORIGIN`.
+Every route needs a session unless marked `@Public()`. Swagger is mounted outside the guard chain, so `SWAGGER_ENABLED` is its only protection; leave it `false` in production. Requests other than `GET`/`HEAD`/`OPTIONS` must come from `PUBLIC_ORIGIN`.
 
 Teachers get the `teacher` role and can edit; personnel, students, parents and super-admins get `user` and can only use. Guests and unknown profiles are refused. The session is a signed cookie, `__Host-rukh`, with a 30-minute sliding idle timeout and an 8-hour maximum age.
 
