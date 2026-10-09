@@ -227,39 +227,50 @@ Rukh ENT requests version 2.0, because a teacher needs all of their classes to c
 ### Roles
 
 ```ts
-// src/ent/role.ts
-export interface EntUserInfo {
-  userId: string;        // stable UUID
-  type: string;
-  uai?: string[];        // school codes
-  classNames?: string[]; // version 2.0
-  classId?: string;      // version 1.0
+// src/ent/roles.ts
+export type Role = 'teacher' | 'user';
+
+export type Profile =
+  'Teacher' | 'Personnel' | 'Student' | 'Parent' | 'Super-admin';
+
+const PROFILE_BY_TYPE: Record<string, Profile> = {
+  Teacher: 'Teacher',
+  Personnel: 'Personnel',
+  Student: 'Student',
+  Relative: 'Parent',
+};
+const PRECEDENCE: Profile[] = ['Teacher', 'Personnel', 'Student', 'Parent'];
+
+/**
+ * Maps an Edifice profile type to a Rukh profile. Super-admin wins over
+ * any type; guests and unknown profiles get `null` and are refused at login.
+ */
+export function profileFromUserinfo(
+  type: string | string[] | undefined,
+  functions: Record<string, unknown> = {},
+): Profile | null {
+  if ('SUPER_ADMIN' in functions) return 'Super-admin';
+  const types = Array.isArray(type) ? type : type ? [type] : [];
+  const profiles = types.map((t) => PROFILE_BY_TYPE[t]);
+  return PRECEDENCE.find((p) => profiles.includes(p)) ?? null;
 }
 
-export type Role = 'staff' | 'student';
-
-const ROLE_BY_TYPE: Record<string, Role> = {
-  ENSEIGNANT: 'staff',
-  Teacher: 'staff',
-  PERSEDUCNAT: 'staff',
-  Personnel: 'staff',
-  ELEVE: 'student',
-  Student: 'student',
-};
-
-export function roleOf(info: EntUserInfo): Role | null {
-  return ROLE_BY_TYPE[info.type] ?? null; // null: access refused
+/** Teachers edit; every other profile only uses. */
+export function roleFromProfile(profile: Profile): Role {
+  return profile === 'Teacher' ? 'teacher' : 'user';
 }
 ```
 
 | ENT profile | Role | Rights |
 | --- | --- | --- |
-| Teacher | `staff` | Create, edit, publish and delete their own assistants; chat |
-| Non-teaching staff (librarians, CPE…) | `staff` | Same as teachers |
-| Student | `student` | Chat with the assistants visible to them |
-| Parent, super-admin | none | Refused with a clear page |
+| Teacher | `teacher` | Create, edit, publish and delete their own assistants; chat |
+| Non-teaching staff (librarians, CPE…) | `user` | Chat with the assistants visible to them |
+| Student | `user` | Same as non-teaching staff |
+| Parent | `user` | Same as non-teaching staff |
+| Super-admin | `user` | Same as non-teaching staff; wins over any other profile type |
+| Guest, unknown | none | Refused with a clear page |
 
-Non-teaching staff usually have no class. In version 1 they publish to the whole school.
+A user holding several profile types gets the first of Teacher, Personnel, Student, Parent. Non-teaching staff usually have no class, so they see the assistants published to the whole school.
 
 ### Session
 
@@ -346,14 +357,14 @@ export class AuthController {
     res.clearCookie('__Host-rukh-state', STATE_COOKIE);
 
     const info = await fetchUserInfo(await exchangeCode(code));
-    const role = roleOf(info);
-    if (!role) throw new ForbiddenException('profile not allowed');
+    const profile = profileFromUserinfo(info.type, info.functions);
+    if (!profile) throw new ForbiddenException('profile not allowed');
 
     res.cookie(
       '__Host-rukh',
       await seal({
         id: info.userId,
-        role,
+        role: roleFromProfile(profile),
         uai: info.uai ?? [],
         classes: info.classNames ?? (info.classId ? [info.classId] : []),
       }),
