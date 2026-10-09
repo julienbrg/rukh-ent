@@ -46,6 +46,7 @@ export async function bootApp(
     MCP_ROLES: 'teacher',
     PORT: String(port),
     SWAGGER_ENABLED: 'false',
+    DB_PATH: ':memory:',
     ...env,
   });
 

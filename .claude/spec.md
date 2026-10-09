@@ -27,6 +27,7 @@ The first target is [ENT Hauts-de-France](https://enthdf.fr/), which runs on the
 | Backend | [NestJS](https://nestjs.com/) and [TypeScript](https://www.typescriptlang.org/), as in Rukh |
 | Frontend | [Vite](https://vite.dev/), [React](https://react.dev/), [React Router](https://reactrouter.com/), [Chakra UI](https://chakra-ui.com/) |
 | Routes | `/` serves the interface, `/api` serves [Swagger UI](https://swagger.io/tools/swagger-ui/) |
+| Storage | [SQLite](https://sqlite.org/) through [better-sqlite3](https://github.com/WiseLibs/better-sqlite3), one file. Documents stay as Markdown files |
 | Hosting | One [OVHcloud VPS](https://www.ovhcloud.com/en/vps/) |
 | Optional | An [MCP](https://modelcontextprotocol.io/) endpoint at `/mcp` |
 
@@ -95,13 +96,14 @@ sequenceDiagram
 ```
 rukh-ent/
 ├── src/                 NestJS application (the fork)
+│   ├── db/              SQLite connection and numbered .sql migrations
 │   ├── ent/             OAuth flow, session, guards, roles
 │   ├── import/          conversion to Markdown
 │   ├── mcp/             optional MCP endpoint
 │   └── …                upstream modules
 ├── web/                 Vite single-page app
 │   └── dist/            build output, served at /
-├── data/                contexts, chat history, conversation index
+├── data/                rukh-ent.db, contexts, chat history
 └── .env
 ```
 
@@ -441,32 +443,32 @@ An assistant is a Rukh context plus ENT metadata.
 
 ### Context index
 
-`data/contexts/<name>/index.json` gains four fields and loses two.
+ENT metadata lives in an `assistants` table in `data/rukh-ent.db`, so "assistants visible to this user" is one query instead of a read of every `index.json`. Documents stay as Markdown under `data/contexts/<name>/`, where the upstream RAG code reads them, and the upstream `index.json` keeps its files, links and queries without the ENT fields.
 
-```json
-{
-  "name": "hdf-0590123a-ses-terminale-k3x9p2",
-  "description": "Économie, terminale : la monnaie et le financement",
-  "model": "mistral",
-  "ownerId": "2bacdfd2-b59c-4b21-a23e-f6346e02fc4a",
-  "uai": "0590123A",
-  "classes": ["TES1", "TES2"],
-  "published": true,
-  "numberOfFiles": 2,
-  "totalSize": 15,
-  "files": [],
-  "links": [],
-  "queries": []
-}
+```sql
+-- src/db/migrations/001-init.sql
+CREATE TABLE assistants (
+  name TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  uai TEXT NOT NULL,
+  classes TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(classes)),
+  published INTEGER NOT NULL DEFAULT 0 CHECK (published IN (0, 1)),
+  model TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ'))
+) STRICT;
 ```
 
-| Field | Meaning |
+| Column | Meaning |
 | --- | --- |
-| `ownerId` | ENT user id of the creator. Replaces `creatorAddress` |
+| `owner_id` | ENT user id of the creator. Replaces `creatorAddress` |
 | `uai` | School the assistant belongs to |
-| `classes` | Classes that can see it. Empty means the whole school |
+| `classes` | JSON array of classes that can see it, matched with `json_each`. Empty means the whole school |
 | `published` | Drafts are visible to their owner only |
-| `creatorName` | Removed: no names are stored |
+| `model`, `description` | Editable through `PATCH /context/:name` |
+
+`creatorName` is removed: no names are stored.
 
 Context names match `^[a-z0-9-]+$` upstream. The fork generates them: `hdf-<uai>-<slug>-<6 random characters>`.
 
@@ -503,21 +505,32 @@ The interface shows the provider next to each model, because student messages ar
 
 Upstream accepts any `sessionId` sent by the client, which would let one user continue another's conversation. In the fork, the server owns the mapping.
 
+```sql
+CREATE TABLE conversations (
+  user_id TEXT NOT NULL,
+  assistant TEXT NOT NULL REFERENCES assistants (name) ON DELETE CASCADE,
+  session_id TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ')),
+  PRIMARY KEY (user_id, assistant)
+) STRICT;
+```
+
 ```ts
 // src/ent/conversation.service.ts
-// data/ent-conversations.json : { "<userId>:<context>": "<rukh sessionId>" }
-async sessionFor(userId: string, context: string): Promise<string> {
-  const index = await this.store.read<Record<string, string>>();
-  const key = `${userId}:${context}`;
-  if (!index[key]) {
-    index[key] = randomUUID();
-    await this.store.write(index);
-  }
-  return index[key];
+sessionFor(userId: string, assistant: string): string {
+  this.db
+    .prepare(
+      'INSERT INTO conversations (user_id, assistant, session_id) VALUES (?, ?, ?) ON CONFLICT DO NOTHING',
+    )
+    .run(userId, assistant, randomUUID());
+  return this.db
+    .prepare('SELECT session_id FROM conversations WHERE user_id = ? AND assistant = ?')
+    .pluck()
+    .get(userId, assistant) as string;
 }
 ```
 
-The `/ask` handler sets `askDto.sessionId` from this service before calling the upstream ask service, which otherwise stays untouched. The store is Rukh's own [JSON store](https://github.com/w3hc/rukh/blob/main/src/storage/json-store.ts) with atomic writes; writes to it must be serialized.
+The `/ask` handler sets `askDto.sessionId` from this service before calling the upstream ask service, which otherwise stays untouched. better-sqlite3 is synchronous and SQLite serializes writes, so no lock is needed. `DELETE /ask/conversation/:context` deletes the row, and deleting an assistant deletes its conversations.
 
 ### Rate limiting
 
@@ -749,6 +762,7 @@ Identity still comes only from the ENT. The ENT access token is never passed to 
 | Process | A [systemd](https://systemd.io/) service under a dedicated user, listening on `127.0.0.1:3000` |
 | TLS and proxy | [Caddy](https://caddyserver.com/), with certificates from [Let's Encrypt](https://letsencrypt.org/) |
 | Firewall | Ports 22, 80 and 443 only |
+| Native modules | better-sqlite3 is compiled or downloaded on `pnpm install` (allowed in `onlyBuiltDependencies`); install `build-essential` and `python3` in case no prebuilt binary matches |
 | Extra packages | LibreOffice for conversion; [Chromium](https://www.chromium.org/) if assistants use links, since Rukh's web reader drives it through [Puppeteer](https://pptr.dev/) |
 
 Model inference runs at the provider, so the server's load comes mostly from document conversion and the web reader. Size the VPS after a load test rather than up front.
@@ -803,7 +817,14 @@ sudo systemctl restart rukh-ent
 
 ### Data and backups
 
-Everything lives in files under `data/`: `contexts/`, `chat-history.json` and `ent-conversations.json`. Back the directory up daily to storage outside the VPS, encrypted, for example with [restic](https://restic.net/). Test a restore before the pilot.
+Everything lives under `data/`: `rukh-ent.db` (assistants and conversations), `contexts/` and `chat-history.json`. The database runs in [WAL mode](https://sqlite.org/wal.html), so copying the file while the service writes can produce a corrupt backup. Snapshot it first with SQLite's [online backup](https://sqlite.org/backup.html), then back the directory up daily to storage outside the VPS, encrypted, for example with [restic](https://restic.net/). Test a restore before the pilot.
+
+```bash
+sqlite3 /srv/rukh-ent/data/rukh-ent.db ".backup /srv/rukh-ent/data/backup/rukh-ent.db"
+restic backup /srv/rukh-ent/data --exclude /srv/rukh-ent/data/rukh-ent.db*
+```
+
+Migrations are numbered `.sql` files in `src/db/migrations/`, tracked with `PRAGMA user_version` and applied at startup in one transaction: a failed migration stops the service and leaves the database as it was.
 
 A single `chat-history.json` holds every conversation. Measure it under load; if it does not hold, split it per session before changing anything else.
 
@@ -832,6 +853,9 @@ IMPORT_MAX_BYTES=20971520
 # Providers (upstream)
 MISTRAL_API_KEY=
 ANTHROPIC_API_KEY=
+
+# Storage
+DB_PATH=data/rukh-ent.db        # `:memory:` in tests
 
 # Server
 PORT=3000
@@ -883,12 +907,13 @@ Ask the school's ENT administrator or [Edifice support](https://edifice.io/conta
 ## Build order
 
 1. Fork, remove SIWE, add the `ent` module: OAuth flow, session, global guard. Verify items 1 to 5.
-2. Ownership and visibility on contexts, `PATCH /context/:name`, server-owned conversations, per-user limits.
-3. Vite app: list, chat with streaming.
-4. Teacher screens: create, instructions, import and review, publish.
-5. VPS: Caddy, systemd, backups, load test.
-6. Pilot with one class.
-7. Optional: MCP endpoint.
+2. SQLite storage: `db` module, migrations, `assistants` and `conversations` tables.
+3. Ownership and visibility on contexts, `PATCH /context/:name`, server-owned conversations, per-user limits.
+4. Vite app: list, chat with streaming.
+5. Teacher screens: create, instructions, import and review, publish.
+6. VPS: Caddy, systemd, backups, load test.
+7. Pilot with one class.
+8. Optional: MCP endpoint.
 
 ## Further reading
 

@@ -3,6 +3,7 @@ import { ConditionalModule, ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { validate } from './config/env.validation';
+import { DbModule } from './db/db.module';
 import { EntModule } from './ent/ent.module';
 import { McpModule } from './mcp/mcp.module';
 import { MockEntModule } from './mock-ent/mock-ent.module';
@@ -24,6 +25,7 @@ const API_ROUTES = [
       rootPath: join(__dirname, '..', 'web', 'dist'),
       exclude: API_ROUTES,
     }),
+    DbModule,
     EntModule,
     ConditionalModule.registerWhen(
       McpModule,

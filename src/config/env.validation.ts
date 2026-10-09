@@ -76,6 +76,10 @@ export class EnvironmentVariables {
   @IsString()
   ANTHROPIC_API_KEY?: string;
 
+  @IsString()
+  @IsNotEmpty()
+  DB_PATH: string = 'data/rukh-ent.db';
+
   @IsInt()
   @IsPositive()
   PORT: number = 3000;
