@@ -53,4 +53,14 @@ export const MOCK_PROFILES: Record<
       functions: { SUPER_ADMIN: { code: 'SUPER_ADMIN' } },
     },
   },
+  guest: {
+    label: 'Guest (refused)',
+    userinfo: {
+      userId: 'mock-guest-0001',
+      type: 'Guest',
+      classNames: [],
+      uai: ['0000001A'],
+      functions: {},
+    },
+  },
 };
