@@ -10,6 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { allowedModels } from '../config/allowed-models';
 import { CurrentUser } from './current-user.decorator';
 import { EntOAuthService } from './ent-oauth.service';
 import { Public } from './public.decorator';
@@ -34,11 +35,7 @@ export class EntController {
     private readonly sessions: SessionService,
     config: ConfigService,
   ) {
-    this.allowedModels = config
-      .get<string>('ENT_ALLOWED_MODELS')
-      .split(',')
-      .map((m) => m.trim())
-      .filter(Boolean);
+    this.allowedModels = allowedModels(config);
   }
 
   /** Always starts a fresh OAuth flow, so a shared computer never reuses a session. */

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
-import { Me } from './api';
+import { Assistant, Me } from './api';
 
 const teacher: Me = {
   userId: 'u1',
@@ -90,6 +90,58 @@ describe('App', () => {
     expect(fetchMock).toHaveBeenLastCalledWith('/auth/logout', {
       method: 'POST',
       credentials: 'same-origin',
+    });
+  });
+
+  describe('/assistants', () => {
+    const assistant = (overrides: Partial<Assistant>): Assistant => ({
+      name: 'hdf-0750001a-maths-abc123',
+      ownerId: 'u1',
+      uai: '0750001A',
+      classes: [],
+      published: true,
+      model: 'mistral',
+      description: '',
+      createdAt: '',
+      updatedAt: '',
+      ...overrides,
+    });
+
+    function serve(context: () => Promise<Response>) {
+      fetchMock.mockImplementation((url) =>
+        url === '/me' ? respond(200, teacher) : context(),
+      );
+    }
+
+    it('lists the visible assistants', async () => {
+      serve(() =>
+        respond(200, [
+          assistant({ name: 'draft-one', published: false, classes: ['3A'] }),
+          assistant({ name: 'school-one', description: 'For everyone' }),
+        ]),
+      );
+      renderApp('/assistants');
+      expect(await screen.findByText('draft-one')).toBeInTheDocument();
+      expect(screen.getByText('school-one')).toBeInTheDocument();
+      expect(screen.getByText('For everyone')).toBeInTheDocument();
+      expect(screen.getAllByText('Draft')).toHaveLength(1);
+      expect(screen.getByText('3A', { selector: 'p' })).toBeInTheDocument();
+      expect(screen.getByText('Whole school')).toBeInTheDocument();
+      expect(fetchMock).toHaveBeenCalledWith('/context', expect.anything());
+    });
+
+    it('says when there are none', async () => {
+      serve(() => respond(200, []));
+      renderApp('/assistants');
+      expect(await screen.findByText('No assistants yet.')).toBeInTheDocument();
+    });
+
+    it('says when loading fails', async () => {
+      serve(() => respond(500));
+      renderApp('/assistants');
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Could not load the assistants.',
+      );
     });
   });
 });

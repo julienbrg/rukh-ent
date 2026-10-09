@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConditionalModule, ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { AssistantsModule } from './assistants/assistants.module';
 import { validate } from './config/env.validation';
 import { DbModule } from './db/db.module';
 import { EntModule } from './ent/ent.module';
@@ -12,6 +13,7 @@ const API_ROUTES = [
   '/api',
   '/api-json',
   '/auth',
+  '/context',
   '/me',
   '/mcp',
   '/mock-ent',
@@ -27,6 +29,7 @@ const API_ROUTES = [
     }),
     DbModule,
     EntModule,
+    AssistantsModule,
     ConditionalModule.registerWhen(
       McpModule,
       (env) => env.MCP_ENABLED === 'true',

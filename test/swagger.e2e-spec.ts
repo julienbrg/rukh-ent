@@ -37,10 +37,15 @@ describe('Swagger enabled', () => {
       ),
     );
     expect(access.sort()).toEqual([
+      'DELETE /context/{name} session',
       'GET /auth/callback public',
       'GET /auth/login public',
+      'GET /context session',
+      'GET /context/{name} session',
       'GET /me session',
+      'PATCH /context/{name} session',
       'POST /auth/logout public',
+      'POST /context session',
       'POST /mcp session',
     ]);
     for (const op of Object.values(paths).flatMap(Object.values)) {
