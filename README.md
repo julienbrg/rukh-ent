@@ -60,6 +60,18 @@ With `MCP_ENABLED=true`, `/mcp` serves a `whoami` tool. It currently authenticat
 | `pnpm test:e2e` | End-to-end tests: boots the app against the mock ENT and runs the login flow over HTTP |
 | `pnpm --filter rukh-ent-web test` | Web app tests (Vitest, jsdom): loading, login errors, Welcome and logout |
 
+## Contributing
+
+
+
+## Contact
+
+**Julien Béranger** ([GitHub](https://github.com/julienbrg))
+
+- Element: [@julienbrg:matrix.org](https://matrix.to/#/@julienbrg:matrix.org)
+- Farcaster: [julien-](https://warpcast.com/julien-)
+- Telegram: [@julienbrg](https://t.me/julienbrg)
+
 ## License
 
-Copyright (C) 2026 Julien Béranger. Licensed under [AGPL-3.0-or-later](LICENSE).
+[AGPL-3.0-or-later](LICENSE).
