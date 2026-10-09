@@ -75,7 +75,7 @@ describe('Registered routes', () => {
   it('returns 401 without a session on every other route', async () => {
     const guarded = routes(e2e).filter((r) => !r.isPublic);
     expect(guarded.map((r) => r.path)).toEqual(
-      expect.arrayContaining(['/me', '/mcp']),
+      expect.arrayContaining(['/context', '/context/:name', '/me', '/mcp']),
     );
 
     const statuses = await Promise.all(
